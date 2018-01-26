@@ -96,11 +96,12 @@ final class SceneComponent extends JComponent implements Accessible, MouseListen
         scene.validate ();
     }
 
+
     @Override
     public void paint (Graphics g) {
 //        System.out.println ("CLIP: " + g.getClipBounds ());
 //        long s = System.currentTimeMillis ();
-        Graphics2D gr = (Graphics2D) g;
+        Graphics2D gr = new DelGr((Graphics2D) g);
 
         Object props = Toolkit.getDefaultToolkit ().getDesktopProperty ("awt.font.desktophints"); // NOI18N
         if (props instanceof Map)
@@ -117,8 +118,8 @@ final class SceneComponent extends JComponent implements Accessible, MouseListen
         scene.setPaintEverything (true);
         gr.setTransform (previousTransform);
 
-        g.setColor ((new DefaultLookFeel()).getForeground()/*Color.BLACK*/);
-        super.paint (g);
+        gr.setColor ((new DefaultLookFeel()).getForeground()/*Color.BLACK*/);
+        super.paint (gr);
 //        System.out.println ("PAINT Time: " + (System.currentTimeMillis () - s));
     }
 
@@ -132,6 +133,9 @@ final class SceneComponent extends JComponent implements Accessible, MouseListen
 
     public void mouseClicked (MouseEvent e) {
         processLocationOperator (Operator.MOUSE_CLICKED, new WidgetAction.WidgetMouseEvent (++ eventIDcounter, e));
+        if (!e.isConsumed() && e.isControlDown()) {
+            HtmlScene.open(scene);
+        }
     }
 
     public void mousePressed (MouseEvent e) {

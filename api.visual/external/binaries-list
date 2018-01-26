@@ -14,17 +14,4 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-javac.compilerargs=-Xlint:unchecked
-javac.source=1.8
-javadoc.arch=${basedir}/arch.xml
-javadoc.apichanges=${basedir}/apichanges.xml
-is.autoload=true
-
-release.external/canvas-api-0.11.jar=modules/ext/canvas-api-0.11.jar
-
-test.config.stableBTD.includes=**/*Test.class
-test.config.stableBTD.excludes=\
-    **/AnchorNotificationTest.class,\
-    **/ConnectionWidgetCollisionsCollectorTest.class,\
-    **/ObjectScene100275Test.class
+43B4CF5949253CB3445C15216F4D5A286507A14C com.dukescript.canvas:canvas-api:0.11

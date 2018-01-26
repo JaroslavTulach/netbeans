@@ -26,6 +26,10 @@
             <code-name-base>org.netbeans.api.visual</code-name-base>
             <module-dependencies>
                 <dependency>
+                    <code-name-base>net.java.html.boot</code-name-base>
+                    <run-dependency/>
+                </dependency>
+                <dependency>
                     <code-name-base>org.netbeans.api.annotations.common</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
@@ -35,11 +39,11 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
-                    <code-name-base>org.openide.util.ui</code-name-base>
+                    <code-name-base>org.netbeans.api.htmlui</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>9.3</specification-version>
+                        <specification-version>1.7</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -56,6 +60,14 @@
                     <compile-dependency/>
                     <run-dependency>
                         <specification-version>8.0</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
+                    <code-name-base>org.openide.util.ui</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>9.3</specification-version>
                     </run-dependency>
                 </dependency>
             </module-dependencies>
@@ -92,6 +104,10 @@
                 <package>org.netbeans.api.visual.export</package>
                 <package>org.netbeans.api.visual.print</package>
             </public-packages>
+            <class-path-extension>
+                <runtime-relative-path>ext/canvas-api-0.11.jar</runtime-relative-path>
+                <binary-origin>external/canvas-api-0.11.jar</binary-origin>
+            </class-path-extension>
         </data>
     </configuration>
 </project>
