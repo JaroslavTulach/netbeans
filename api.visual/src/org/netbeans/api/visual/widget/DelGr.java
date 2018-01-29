@@ -46,8 +46,10 @@ import java.util.Map;
 class DelGr extends Graphics2D {
 
     private final Graphics2D d;
+    private final String prefix;
 
-    DelGr(Graphics2D d) {
+    DelGr(String prefix, Graphics2D d) {
+        this.prefix = prefix;
         this.d = d;
     }
 
@@ -475,13 +477,15 @@ class DelGr extends Graphics2D {
      * @return the d
      */
     private Graphics2D delegate() {
-        for (StackTraceElement o : new Exception().getStackTrace()) {
-            if (o.getMethodName().equals("delegate")) {
-                continue;
-            }
-            if (o.getClassName().contains("DelGr")) {
-                System.err.println("  delegating " + o.getMethodName());
-                break;
+        if (prefix != null) {
+            for (StackTraceElement o : new Exception().getStackTrace()) {
+                if (o.getMethodName().equals("delegate")) {
+                    continue;
+                }
+                if (o.getClassName().contains("DelGr")) {
+                    System.err.println("  " + prefix + " " + o.getMethodName());
+                    break;
+                }
             }
         }
         return d;
