@@ -166,6 +166,11 @@ final class HtmlScene {
         @Override
         public void setPaint(Paint paint) {
             this.paint = paint;
+            if (paint instanceof Color) {
+                setColor((Color) paint);
+            } else {
+                throw new IllegalArgumentException("unknown: " + paint);
+            }
         }
 
         @Override
@@ -230,7 +235,13 @@ final class HtmlScene {
 
         @Override
         public void transform(AffineTransform Tx) {
-            throw new UnsupportedOperationException();
+            if (this.tx != null) {
+                this.tx.preConcatenate(Tx);
+                setTransform(tx);
+            } else {
+                this.tx = Tx;
+                setTransform(tx);
+            }
         }
 
 
@@ -239,6 +250,14 @@ final class HtmlScene {
         public void setTransform(AffineTransform tx) {
             tx.getClass();
             this.tx = tx;
+            d.setTransform(
+                tx.getScaleX(),
+                tx.getShearX(),
+                tx.getShearY(),
+                tx.getScaleY(),
+                tx.getTranslateX(),
+                tx.getTranslateY()
+            );
         }
 
         @Override

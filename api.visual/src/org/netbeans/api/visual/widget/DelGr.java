@@ -41,6 +41,7 @@ import java.awt.image.ImageObserver;
 import java.awt.image.RenderedImage;
 import java.awt.image.renderable.RenderableImage;
 import java.text.AttributedCharacterIterator;
+import java.util.Arrays;
 import java.util.Map;
 
 class DelGr extends Graphics2D {
@@ -135,7 +136,7 @@ class DelGr extends Graphics2D {
 
     @Override
     public void setPaint(Paint paint) {
-        delegate().setPaint(paint);
+        delegate(paint).setPaint(paint);
     }
 
     @Override
@@ -170,12 +171,12 @@ class DelGr extends Graphics2D {
 
     @Override
     public void translate(int x, int y) {
-        delegate().translate(x, y);
+        delegate(x, y).translate(x, y);
     }
 
     @Override
     public void translate(double tx, double ty) {
-        delegate().translate(tx, ty);
+        delegate(tx, ty).translate(tx, ty);
     }
 
     @Override
@@ -204,13 +205,13 @@ class DelGr extends Graphics2D {
     }
 
     @Override
-    public void setTransform(AffineTransform Tx) {
-        delegate().setTransform(Tx);
+    public void setTransform(AffineTransform tx) {
+        delegate(tx).setTransform(tx);
     }
 
     @Override
     public AffineTransform getTransform() {
-        return delegate().getTransform();
+        return delegate(this.d.getTransform()).getTransform();
     }
 
     @Override
@@ -335,17 +336,17 @@ class DelGr extends Graphics2D {
 
     @Override
     public void fillRect(int x, int y, int width, int height) {
-        delegate().fillRect(x, y, width, height);
+        delegate(x, y, width, height).fillRect(x, y, width, height);
     }
 
     @Override
     public void drawRect(int x, int y, int width, int height) {
-        delegate().drawRect(x, y, width, height);
+        delegate(x, y, width, height).drawRect(x, y, width, height);
     }
 
     @Override
     public void clearRect(int x, int y, int width, int height) {
-        delegate().clearRect(x, y, width, height);
+        delegate(x, y, width, height).clearRect(x, y, width, height);
     }
 
     @Override
@@ -476,14 +477,14 @@ class DelGr extends Graphics2D {
     /**
      * @return the d
      */
-    private Graphics2D delegate() {
+    private Graphics2D delegate(Object... args) {
         if (prefix != null) {
             for (StackTraceElement o : new Exception().getStackTrace()) {
                 if (o.getMethodName().equals("delegate")) {
                     continue;
                 }
                 if (o.getClassName().contains("DelGr")) {
-                    System.err.println("  " + prefix + " " + o.getMethodName());
+                    System.err.println("  " + prefix + " " + o.getMethodName() + Arrays.toString(args));
                     break;
                 }
             }
