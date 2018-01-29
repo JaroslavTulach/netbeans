@@ -58,7 +58,7 @@ final class HtmlScene {
         JFrame f = new JFrame();
         f.getContentPane().setLayout(new BorderLayout());
         f.getContentPane().add(c, BorderLayout.CENTER);
-        f.setSize(1050, 1050);
+        f.setSize(scene.getBounds().getSize());
         f.setVisible(true);
     }
 
@@ -66,6 +66,7 @@ final class HtmlScene {
     static void initializeCanvas(HtmlScene canvas) {
         GraphicsContext2D context = GraphicsContext2D.getOrCreate("scene");
         final Graphics2D g = new DelGr("[web]", new WebGraphics2D(context));
+        canvas.scene.layout(true);
         canvas.scene.paint(g);
     }
 
@@ -401,7 +402,8 @@ final class HtmlScene {
 
         @Override
         public void fillRect(int x, int y, int width, int height) {
-            d.fillRect(x, y, width, height);
+            System.err.println("fillRect: " + x + " " + y + " " + width + " " + height + " tx: " + getTransform());
+            d.fillRect(x + getTransform().getTranslateX() - 20, y + getTransform().getTranslateY() - 20, width, height);
         }
 
         @Override

@@ -994,8 +994,10 @@ public class Widget implements Accessible, Lookup.Provider {
                 continue;
             Point location = child.getLocation ();
             Rectangle bounds = child.getBounds ();
-            bounds.translate (location.x, location.y);
-            clientArea.add (bounds);
+            if (bounds != null) {
+                bounds.translate (location.x, location.y);
+                clientArea.add (bounds);
+            }
         }
         clientArea.x -= insets.left;
         clientArea.y -= insets.top;

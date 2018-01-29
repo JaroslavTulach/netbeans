@@ -101,7 +101,7 @@ final class SceneComponent extends JComponent implements Accessible, MouseListen
     public void paint (Graphics g) {
 //        System.out.println ("CLIP: " + g.getClipBounds ());
 //        long s = System.currentTimeMillis ();
-        Graphics2D gr = new DelGr(null, (Graphics2D) g);
+        Graphics2D gr = new DelGr("[awt]", (Graphics2D) g);
 
         Object props = Toolkit.getDefaultToolkit ().getDesktopProperty ("awt.font.desktophints"); // NOI18N
         if (props instanceof Map)

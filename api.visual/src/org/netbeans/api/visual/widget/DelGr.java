@@ -141,7 +141,7 @@ class DelGr extends Graphics2D {
 
     @Override
     public void setStroke(Stroke s) {
-        delegate().setStroke(s);
+        delegate(s).setStroke(s);
     }
 
     @Override
@@ -191,7 +191,7 @@ class DelGr extends Graphics2D {
 
     @Override
     public void scale(double sx, double sy) {
-        delegate().scale(sx, sy);
+        delegate(sx, sy).scale(sx, sy);
     }
 
     @Override
@@ -241,7 +241,7 @@ class DelGr extends Graphics2D {
 
     @Override
     public void clip(Shape s) {
-        delegate().clip(s);
+        delegate(s).clip(s);
     }
 
     @Override
@@ -266,7 +266,7 @@ class DelGr extends Graphics2D {
 
     @Override
     public void setColor(Color c) {
-        delegate().setColor(c);
+        delegate(c).setColor(c);
     }
 
     @Override
@@ -301,17 +301,17 @@ class DelGr extends Graphics2D {
 
     @Override
     public Rectangle getClipBounds() {
-        return delegate().getClipBounds();
+        return delegate(d.getClipBounds()).getClipBounds();
     }
 
     @Override
     public void clipRect(int x, int y, int width, int height) {
-        delegate().clipRect(x, y, width, height);
+        delegate(x, y, width, height).clipRect(x, y, width, height);
     }
 
     @Override
     public void setClip(int x, int y, int width, int height) {
-        delegate().setClip(x, y, width, height);
+        delegate(x, y, width, height).setClip(x, y, width, height);
     }
 
     @Override
@@ -321,7 +321,7 @@ class DelGr extends Graphics2D {
 
     @Override
     public void setClip(Shape clip) {
-        delegate().setClip(clip);
+        delegate(clip).setClip(clip);
     }
 
     @Override
@@ -331,7 +331,7 @@ class DelGr extends Graphics2D {
 
     @Override
     public void drawLine(int x1, int y1, int x2, int y2) {
-        delegate().drawLine(x1, y1, x2, y2);
+        delegate(x1, y1, x2, y2).drawLine(x1, y1, x2, y2);
     }
 
     @Override
