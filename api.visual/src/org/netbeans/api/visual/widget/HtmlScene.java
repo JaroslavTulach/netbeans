@@ -20,6 +20,7 @@ package org.netbeans.api.visual.widget;
 
 import com.dukescript.api.canvas.GraphicsContext2D;
 import com.dukescript.api.canvas.Style;
+import java.awt.AlphaComposite;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Composite;
@@ -39,7 +40,6 @@ import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.image.ImageObserver;
@@ -87,6 +87,7 @@ final class HtmlScene {
         private Paint paint;
         private Stroke stroke;
         private Font font;
+        private Composite composite = AlphaComposite.SrcOver;
 
         public WebGraphics2D(GraphicsContext2D d) {
             this.d = d;
@@ -192,7 +193,7 @@ final class HtmlScene {
 
         @Override
         public void setComposite(Composite comp) {
-            throw new UnsupportedOperationException();
+            this.composite = comp;
         }
 
         @Override
@@ -303,9 +304,10 @@ final class HtmlScene {
             return this.paint;
         }
 
+
         @Override
         public Composite getComposite() {
-            throw new UnsupportedOperationException();
+            return this.composite;
         }
 
         @Override
@@ -326,11 +328,10 @@ final class HtmlScene {
         @Override
         public void clip(Shape s) {
             if (clip == null) {
-                clip = s;
+                clip = s.getBounds();
             } else {
-                Rectangle2D r1 = clip.getBounds2D();
-                Rectangle2D r2 = s.getBounds2D();
-                clip = r1.createIntersection(r2);
+                Rectangle r2 = s.getBounds();
+                assignClip(clip.intersection(r2));
             }
         }
 
@@ -388,12 +389,25 @@ final class HtmlScene {
         @Override
         public FontMetrics getFontMetrics(Font f) {
             return new FontMetrics(f) {
+                @Override
+                public int stringWidth(String str) {
+                    FontRenderContext frc = new FontRenderContext(tx, true, false);
+                    return (int) f.getStringBounds(str, frc).getWidth();
+                }
+
+                @Override
+                public int charWidth(char ch) {
+                    FontRenderContext frc = new FontRenderContext(tx, true, false);
+                    char[] arr = { ch };
+                    return (int) f.getStringBounds(arr, 0, 1, frc).getWidth();
+                }
+
             };
         }
 
         @Override
         public Rectangle getClipBounds() {
-            return clip == null ? null : clip.getBounds();
+            return clip == null ? null : clip;
         }
 
         @Override
@@ -403,10 +417,19 @@ final class HtmlScene {
 
         @Override
         public void setClip(int x, int y, int width, int height) {
-            clip = new Rectangle(x, y, width, height);
+            assignClip(new Rectangle(x, y, width, height));
         }
 
-        private Shape clip;
+        private Rectangle clip;
+
+        private void assignClip(Rectangle r) {
+            if (r.getWidth() < 0 || r.getHeight() < 0) {
+                System.err.println("Negative " + r);
+                return;
+            }
+            clip = r;
+        }
+
         @Override
         public Shape getClip() {
             return this.clip;
@@ -414,7 +437,7 @@ final class HtmlScene {
 
         @Override
         public void setClip(Shape clip) {
-            this.clip = clip;
+            this.clip = clip == null ? null : clip.getBounds();
         }
 
         @Override

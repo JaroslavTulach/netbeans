@@ -1038,8 +1038,8 @@ public class Widget implements Accessible, Lookup.Provider {
      * @param checkClipping if true, then the clipping is used
      */
     public final void setCheckClipping (boolean checkClipping) {
-        this.checkClipping = checkClipping;
-        repaint ();
+// TBD:        this.checkClipping = checkClipping;
+// TBD:        repaint ();
     }
 
     /**
