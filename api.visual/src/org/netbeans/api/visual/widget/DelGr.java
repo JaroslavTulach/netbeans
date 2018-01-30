@@ -42,17 +42,35 @@ import java.awt.image.RenderedImage;
 import java.awt.image.renderable.RenderableImage;
 import java.text.AttributedCharacterIterator;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 class DelGr extends Graphics2D {
 
-    private final Graphics2D d;
-    private final String prefix;
+    private final Map<Thread, Graphics2D> map;
+    private final Map<Thread, String> prefixes;
 
-    DelGr(String prefix, Graphics2D d) {
-        this.prefix = prefix;
-        this.d = d;
+    private DelGr(String prefix, Graphics2D d) {
+        this.prefixes = new HashMap<>();
+        this.map = new HashMap<>();
+        
+        register(prefix, d);
     }
+
+    private void register(String prefix, Graphics2D d) {
+        this.prefixes.put(Thread.currentThread(), prefix);
+        this.map.put(Thread.currentThread(), d);
+    }
+
+    static Graphics2D register(Graphics2D graphics, String prefix, Graphics2D real) {
+        if (graphics instanceof DelGr) {
+            ((DelGr) graphics).register(prefix, real);
+            return graphics;
+        } else {
+            return new DelGr(prefix, real);
+        }
+    }
+
 
     @Override
     public void draw3DRect(int x, int y, int width, int height, boolean raised) {
@@ -211,7 +229,7 @@ class DelGr extends Graphics2D {
 
     @Override
     public AffineTransform getTransform() {
-        return delegate(this.d.getTransform()).getTransform();
+        return delegate().getTransform();
     }
 
     @Override
@@ -301,7 +319,7 @@ class DelGr extends Graphics2D {
 
     @Override
     public Rectangle getClipBounds() {
-        return delegate(d.getClipBounds()).getClipBounds();
+        return delegate().getClipBounds();
     }
 
     @Override
@@ -478,6 +496,11 @@ class DelGr extends Graphics2D {
      * @return the d
      */
     private Graphics2D delegate(Object... args) {
+        Graphics2D d = map.get(Thread.currentThread());
+        if (d == null) {
+            throw new NullPointerException("No context for this thread in " + this.map);
+        }
+        String prefix = prefixes.get(Thread.currentThread());
         if (prefix != null) {
             for (StackTraceElement o : new Exception().getStackTrace()) {
                 if (o.getMethodName().equals("delegate")) {

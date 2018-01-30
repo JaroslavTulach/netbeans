@@ -69,7 +69,7 @@ final class HtmlScene {
     @HTMLComponent(url = "canvas.html", type = JComponent.class)
     static void initializeCanvas(HtmlScene canvas, Rectangle bounds) {
         GraphicsContext2D context = GraphicsContext2D.getOrCreate("scene");
-        final Graphics2D g = new DelGr("[web]", new WebGraphics2D(context));
+        final Graphics2D g = DelGr.register(canvas.scene.getGraphics(), "[web]", new WebGraphics2D(context));
         canvas.scene.setGraphics(g);
         if (bounds != null) {
             canvas.scene.setPreferredBounds(bounds);
@@ -128,6 +128,7 @@ final class HtmlScene {
 
         @Override
         public void drawString(String str, int x, int y) {
+            this.d.setTextBaseline("ideographic");
             this.d.fillText(str, x, y);
         }
 
@@ -157,7 +158,7 @@ final class HtmlScene {
                 Path2D p = (Path2D) s;
                 double[] to = new double[6];
                 d.beginPath();
-                for (PathIterator it = p.getPathIterator(tx); !it.isDone(); it.next()) {
+                for (PathIterator it = p.getPathIterator(new AffineTransform()); !it.isDone(); it.next()) {
                     switch (it.currentSegment(to)) {
                         case PathIterator.SEG_CLOSE:
                             d.closePath();
