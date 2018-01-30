@@ -116,7 +116,7 @@ class DelGr extends Graphics2D {
 
     @Override
     public void fill(Shape s) {
-        delegate().fill(s);
+        delegate(s).fill(s);
     }
 
     @Override

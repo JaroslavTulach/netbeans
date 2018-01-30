@@ -62,6 +62,7 @@ public class CompareTest extends NbTestCase {
         l2.setPreferredLocation(new Point(500, 500));
         l2.setLabel("World!");
         l2.setBackground(Color.YELLOW);
+        l2.setBorder(new LineBorder(Color.BLACK));
         return s;
     }
 

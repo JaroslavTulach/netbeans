@@ -37,6 +37,8 @@ import java.awt.Stroke;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Path2D;
+import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
@@ -151,6 +153,28 @@ final class HtmlScene {
 
         @Override
         public void fill(Shape s) {
+            if (s instanceof Path2D) {
+                Path2D p = (Path2D) s;
+                double[] to = new double[6];
+                d.beginPath();
+                for (PathIterator it = p.getPathIterator(tx); !it.isDone(); it.next()) {
+                    switch (it.currentSegment(to)) {
+                        case PathIterator.SEG_CLOSE:
+                            d.closePath();
+                            break;
+                        case PathIterator.SEG_MOVETO:
+                            d.moveTo(to[0], to[1]);
+                            break;
+                        case PathIterator.SEG_LINETO:
+                            d.lineTo(to[0], to[1]);
+                            break;
+                        default:
+                            throw new IllegalStateException("Unknown type: " + it.currentSegment(to));
+                    }
+                }
+                d.stroke();
+                return;
+            }
             Rectangle r = s.getBounds();
             d.fillRect(r.x, r.y, r.width, r.height);
         }
@@ -213,6 +237,7 @@ final class HtmlScene {
         @Override
         public void translate(int x, int y) {
             tx.translate(x, y);
+            setTransform(tx);
         }
 
         @Override
