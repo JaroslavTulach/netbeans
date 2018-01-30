@@ -380,7 +380,6 @@ public class Scene extends Widget {
     }
 
     private void resolveRepaints () {
-        assert SwingUtilities.isEventDispatchThread();
         for (Widget widget : repaintWidgets) {
             Rectangle repaintBounds = widget.getBounds ();
             if (repaintBounds == null)

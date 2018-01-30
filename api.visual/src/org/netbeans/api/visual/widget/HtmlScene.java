@@ -52,20 +52,26 @@ import org.netbeans.api.htmlui.HTMLComponent;
 final class HtmlScene {
     private final Scene scene;
     
-    static void open(Scene scene) {
+    static void open(Scene scene, Rectangle bounds) {
         HtmlScene view = new HtmlScene(scene);
-        JComponent c = Pages.initializeCanvas(view);
+        JComponent c = Pages.initializeCanvas(view, bounds);
         JFrame f = new JFrame();
         f.getContentPane().setLayout(new BorderLayout());
         f.getContentPane().add(c, BorderLayout.CENTER);
-        f.setSize(scene.getBounds().getSize());
+        if (bounds != null) {
+            f.setSize(bounds.getSize());
+        }
         f.setVisible(true);
     }
 
     @HTMLComponent(url = "canvas.html", type = JComponent.class)
-    static void initializeCanvas(HtmlScene canvas) {
+    static void initializeCanvas(HtmlScene canvas, Rectangle bounds) {
         GraphicsContext2D context = GraphicsContext2D.getOrCreate("scene");
         final Graphics2D g = new DelGr("[web]", new WebGraphics2D(context));
+        canvas.scene.setGraphics(g);
+        if (bounds != null) {
+            canvas.scene.setPreferredBounds(bounds);
+        }
         canvas.scene.layout(true);
         canvas.scene.paint(g);
     }

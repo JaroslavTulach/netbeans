@@ -91,22 +91,22 @@ class DelGr extends Graphics2D {
 
     @Override
     public void drawString(String str, int x, int y) {
-        delegate().drawString(str, x, y);
+        delegate(str, x, y).drawString(str, x, y);
     }
 
     @Override
     public void drawString(String str, float x, float y) {
-        delegate().drawString(str, x, y);
+        delegate(str, x, y).drawString(str, x, y);
     }
 
     @Override
     public void drawString(AttributedCharacterIterator iterator, int x, int y) {
-        delegate().drawString(iterator, x, y);
+        delegate(iterator, x, y).drawString(iterator, x, y);
     }
 
     @Override
     public void drawString(AttributedCharacterIterator iterator, float x, float y) {
-        delegate().drawString(iterator, x, y);
+        delegate(iterator, x, y).drawString(iterator, x, y);
     }
 
     @Override

@@ -1,10 +1,14 @@
 package org.netbeans.api.visual.widget;
 
 import java.awt.Color;
+import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.net.URL;
 import java.net.URLStreamHandlerFactory;
+import java.util.concurrent.Exchanger;
+import java.util.function.Supplier;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.border.LineBorder;
@@ -17,11 +21,6 @@ public class CompareTest extends NbTestCase {
         super(name);
     }
 
-    @Override
-    protected boolean runInEQ() {
-        return true;
-    }
-
     static {
         for (URLStreamHandlerFactory f : Lookup.getDefault().lookupAll(URLStreamHandlerFactory.class)) {
             URL.setURLStreamHandlerFactory(f);
@@ -30,10 +29,26 @@ public class CompareTest extends NbTestCase {
     }
 
     public void testDrawLine() throws Exception {
-        assertScreens(createHelloWorld(), createHelloWorld());
+        assertScreens(with(CompareTest::createHelloWorld), with(CompareTest::createHelloWorld));
     }
 
-    private Scene createHelloWorld() {
+    public static <T> T with(Supplier<T> compute) {
+        try {
+            Exchanger<T> value = new Exchanger<>();
+            EventQueue.invokeLater(() -> {
+                try {
+                    value.exchange(compute.get());
+                } catch (InterruptedException ex) {
+                    throw new IllegalStateException(ex);
+                }
+            });
+            return value.exchange(null);
+        } catch (InterruptedException ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
+    private static Scene createHelloWorld() {
         Scene s = new Scene();
         final LabelWidget l1 = new LabelWidget(s);
         s.addChild(l1);
@@ -51,13 +66,18 @@ public class CompareTest extends NbTestCase {
     }
 
     public static void assertScreens(Scene s1, Scene s2) throws Exception {
-        JComponent c = s1.createView();
-        JFrame f = new JFrame("test");
-        f.getContentPane().setLayout(new FlowLayout());
-        f.getContentPane().add(c);
-        f.pack();
-        f.setVisible(true);
-        HtmlScene.open(s2);
+        Rectangle[] bounds = new Rectangle[1];
+        EventQueue.invokeAndWait(() -> {
+            JComponent c = s1.createView();
+            JFrame f = new JFrame("test");
+            f.getContentPane().setLayout(new FlowLayout());
+            f.getContentPane().add(c);
+            f.pack();
+            f.setVisible(true);
+            bounds[0] = c.getBounds();
+        });
+        HtmlScene.open(s2, bounds[0]);
         System.in.read();
+        Thread.sleep(20000);
     }
 }

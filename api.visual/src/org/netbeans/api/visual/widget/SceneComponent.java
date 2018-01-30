@@ -134,7 +134,7 @@ final class SceneComponent extends JComponent implements Accessible, MouseListen
     public void mouseClicked (MouseEvent e) {
         processLocationOperator (Operator.MOUSE_CLICKED, new WidgetAction.WidgetMouseEvent (++ eventIDcounter, e));
         if (!e.isConsumed() && e.isControlDown()) {
-            HtmlScene.open(scene);
+            HtmlScene.open(scene, null);
         }
     }
 
