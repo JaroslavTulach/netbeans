@@ -354,9 +354,7 @@ final class HtmlScene {
         public void setColor(Color c) {
             this.color = c;
             if (c != null) {
-                String color = toWebColor(c);
-                System.err.println("setting " + color);
-                Style.Color web = new Style.Color(color);
+                Style.Color web = new Style.Color(toWebColor(c));
                 this.d.setStrokeStyle(web);
                 this.d.setFillStyle(web);
             }
@@ -433,8 +431,7 @@ final class HtmlScene {
 
         @Override
         public void fillRect(int x, int y, int width, int height) {
-            System.err.println("fillRect: " + x + " " + y + " " + width + " " + height + " tx: " + getTransform());
-            d.fillRect(x + getTransform().getTranslateX() - 20, y + getTransform().getTranslateY() - 20, width, height);
+            d.fillRect(x, y, width, height);
         }
 
         @Override
