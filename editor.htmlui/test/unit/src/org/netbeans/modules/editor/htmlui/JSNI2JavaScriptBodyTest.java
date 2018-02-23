@@ -19,9 +19,9 @@
 package org.netbeans.modules.editor.htmlui;
 
 import net.java.html.js.JavaScriptBody;
+import org.junit.Test;
 import org.netbeans.modules.java.hints.test.api.HintTest;
 import org.openide.filesystems.FileUtil;
-import org.testng.annotations.Test;
 
 public class JSNI2JavaScriptBodyTest {
     @Test
