@@ -40,7 +40,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
 import javax.help.Map.ID;
-import org.jdesktop.jdic.browser.WebBrowser;
+import org.openide.awt.HtmlBrowser;
 
 /**
  * A native UI for JHelpContentViewer using the native browser. 
@@ -56,7 +56,7 @@ implements HelpModelListener, TextHelpModelListener, PropertyChangeListener, Ser
     private static Dimension PREF_SIZE = new Dimension(200, 300);
     private static Dimension MIN_SIZE = new Dimension(80, 80);
     
-    private WebBrowser html;
+    private HtmlBrowser html;
     private JViewport vp;
     
     public static ComponentUI createUI(JComponent x) {
@@ -84,10 +84,10 @@ implements HelpModelListener, TextHelpModelListener, PropertyChangeListener, Ser
             model.addTextHelpModelListener(this);
         }
         
-	html = new WebBrowser();
+	html = new HtmlBrowser();
         html.getAccessibleContext().setAccessibleName(HelpUtilities.getString(HelpUtilities.getLocale(html), "access.contentViewer"));
 	if (debug) {
-	    html.setDebug(true);
+//	    html.setDebug(true);
 	}
 	/**
 	 * html future additions
@@ -225,7 +225,7 @@ implements HelpModelListener, TextHelpModelListener, PropertyChangeListener, Ser
 		 */
                 // a~~ html.setText("");
             }else if (changeName.equals("reload")) {
-		html.refresh();
+		html.getBrowserImpl().reloadDocument();
             }
         }
     }
