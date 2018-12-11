@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -295,9 +296,43 @@ public class NbPacScriptEvaluator implements PacScriptEvaluator {
             if (pacHelpers == null) { // this should be redundant but we take no chances
                 pacHelpers = new NbPacHelperMethods();
             }
-            Bindings b = engine.createBindings();
-            b.put(JS_HELPER_METHODS_INSTANCE_NAME, pacHelpers);
-            engine.setBindings(b, ScriptContext.ENGINE_SCOPE);
+
+            String[] allowedGlobals =
+                    ("Object,Function,Array,String,Date,Number,BigInt,"
+                    + "Boolean,RegExp,Math,JSON,NaN,Infinity,undefined,"
+                    + "isNaN,isFinite,parseFloat,parseInt,encodeURI,"
+                    + "encodeURIComponent,decodeURI,decodeURIComponent,eval,"
+                    + "escape,unescape,"
+                    + "Error,EvalError,RangeError,ReferenceError,SyntaxError,"
+                    + "TypeError,URIError,ArrayBuffer,Int8Array,Uint8Array,"
+                    + "Uint8ClampedArray,Int16Array,Uint16Array,Int32Array,"
+                    + "Uint32Array,Float32Array,Float64Array,BigInt64Array,"
+                    + "BigUint64Array,DataView,Map,Set,WeakMap,"
+                    + "WeakSet,Symbol,Reflect,Proxy,Promise,SharedArrayBuffer,"
+                    + "Atomics,console,performance,"
+                    + "arguments").split(",");
+
+            Object cleaner = engine.eval("(function(allowed, pacName, pacHelpers) {\n"
+                    + "   var names = Object.getOwnPropertyNames(this);\n"
+                    + "   MAIN: for (var i = 0; i < names.length; i++) {\n"
+                    + "     for (var j = 0; j < allowed.length; j++) {\n"
+                    + "       if (names[i] === allowed[j]) {\n"
+                    + "         continue MAIN;\n"
+                    + "       }\n"
+                    + "     }\n"
+                    + "     delete this[names[i]];\n"
+                    + "   }\n"
+                    + "   this[pacName] = pacHelpers;\n"
+                    + "})");
+
+            try {
+                ((Invocable)engine).invokeMethod(cleaner, "call", null, 
+                    allowedGlobals, JS_HELPER_METHODS_INSTANCE_NAME, pacHelpers
+                );
+            } catch (NoSuchMethodException ex) {
+                throw new ScriptException(ex);
+            }
+
             
             engine.eval(pacSource);
             engine.eval(helperJSScript);
