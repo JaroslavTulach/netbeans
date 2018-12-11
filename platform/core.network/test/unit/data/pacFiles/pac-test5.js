@@ -22,6 +22,9 @@ function FindProxyForURL(url, host)
     if (typeof Java !== 'undefined') {
         reply += (typeof Java) + ":";
     }
+    if (typeof jsPacHelpers !== 'undefined') {
+        reply += "jsPacHelpers:" + jsPacHelpers;
+    }
 
     // Make everything lower case.
     url = url.toLowerCase();
