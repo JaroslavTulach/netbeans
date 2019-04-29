@@ -41,6 +41,7 @@ import org.netbeans.lib.profiler.heap.Heap;
 import org.netbeans.lib.profiler.heap.HeapFactory;
 import org.netbeans.lib.profiler.heap.Instance;
 import org.netbeans.lib.profiler.heap.JavaClass;
+import org.netbeans.lib.profiler.heap.PrimitiveArrayInstance;
 import org.netbeans.modules.profiler.oql.engine.api.impl.TreeIterator;
 import org.openide.util.Exceptions;
 
@@ -109,7 +110,6 @@ final class HeapObject implements TruffleObject {
         if ("forEachObject".equals(member)) {
             Consumer<Object> consumer = (value) -> {
                 try {
-                    System.err.println("v: " + value);
                     InstanceObject obj = new InstanceObject((Instance)value);
                     LibraryFactory.resolve(InteropLibrary.class).getUncached().execute(arguments[0], obj);
                 } catch (UnsupportedTypeException ex) {
@@ -155,6 +155,29 @@ class InstanceObject implements TruffleObject {
 
     InstanceObject(Instance value) {
         this.value = value;
+    }
+
+    @ExportMessage
+    boolean isMemberReadable(String name) {
+        return "length".equals(name);
+    }
+
+    @ExportMessage
+    Object getMembers(boolean includePrivate) {
+        return null;
+    }
+
+    @ExportMessage
+    boolean hasMembers() {
+        return true;
+    }
+
+    @ExportMessage
+    long readMember(String name) throws UnknownIdentifierException {
+        if (name.equals("length") && value instanceof PrimitiveArrayInstance) {
+            return value.getSize();
+        }
+        throw UnknownIdentifierException.create(name);
     }
 }
 

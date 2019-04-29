@@ -24,8 +24,8 @@ import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 import org.junit.Test;
 
 public class OQLLanguageTest {
@@ -36,11 +36,37 @@ public class OQLLanguageTest {
         Source src = Source.newBuilder("oql", smallHeap).build();
         Context ctx = Context.newBuilder("oql", "js").allowHostAccess(HostAccess.ALL).build();
         Value value = ctx.eval(src);
-        
+
+        int[] count = { 0 };
         Consumer<Object> callback = (obj) -> {
-            System.err.println("obj: " + obj);
+            count[0]++;
         };
-        
-        fail("v: " + value.invokeMember("forEachObject", callback, "int[]", false));
+        value.invokeMember("forEachObject", callback, "int[]", false);
+        assertEquals("Heap searched for int[]", 19, count[0]);
+    }
+
+    @Test
+    public void walkHeapInJs() throws Exception {
+        URL smallHeap = OQLLanguageTest.class.getResource("../engine/api/impl/small_heap.bin");
+        assertNotNull("small_heap.bin found", smallHeap);
+        Source src = Source.newBuilder("oql", smallHeap).build();
+        Context ctx = Context.newBuilder("oql", "js").allowHostAccess(HostAccess.ALL).build();
+
+        Value countInstances = ctx.eval("js", "(function(heap) {\n"
+                + "var now = new Date().getTime();\n"
+                + "var count = 0;\n"
+                + "heap.forEachObject(function(x) {\n"
+                + "  if (x.length >= 256) count++;\n"
+                + "}, 'int[]', false);\n"
+                + "var end = new Date().getTime();\n"
+                + "print(count);\n"
+                + "print('Took ' + (end - now) + ' ms');\n"
+                + "return count;\n"
+                + "})\n"
+        );
+
+        Value heap = ctx.eval(src);
+        Value count = countInstances.execute(heap);
+        assertEquals("Heap searched for long int[]", 2, count.asInt());
     }
 }
