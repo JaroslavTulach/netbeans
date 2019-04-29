@@ -15,3 +15,4 @@
 # specific language governing permissions and limitations
 # under the License.
 A2793D3B58DE73AE6E19B352F8051B0E8BC3620E org.graalvm.truffle:truffle-api:1.0.0-rc16
+C1A1200FE6C317B70AE88F5E5122A87750197AD3 org.graalvm.truffle:truffle-dsl-processor:1.0.0-rc16
