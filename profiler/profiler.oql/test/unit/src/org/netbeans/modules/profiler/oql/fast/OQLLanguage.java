@@ -22,6 +22,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ArityException;
@@ -115,22 +116,13 @@ final class HeapObject implements TruffleObject {
             return args[0];
         }
 
-        private static boolean includeSubclasses(Object[] arguments) {
-            boolean includeSubclasses = arguments.length < 2 || !Boolean.TRUE.equals(arguments[2]);
-            return includeSubclasses;
-        }
-
-        private static JavaClass javaType(Object[] arguments, HeapObject heap1) {
-            JavaClass type = arguments.length < 1 ? null : heap1.heap.getJavaClassByName((String) arguments[1]);
-            return type;
-        }
-
         @Specialization(limit = "3")
         static Object invokeMember(
             HeapObject heap, String member, Object[] arguments,
+            @Cached("member") String cachedMember, 
             @CachedLibrary(value = "receiver(arguments)") InteropLibrary interop
         ) throws UnsupportedMessageException, ArityException, UnknownIdentifierException, UnsupportedTypeException {
-            if ("forEachObject".equals(member)) {
+            if ("forEachObject".equals(cachedMember)) {
                 Consumer<Object> consumer = (value) -> {
                     try {
                         InstanceObject obj = new InstanceObject((Instance)value);
@@ -140,9 +132,7 @@ final class HeapObject implements TruffleObject {
                         throw ex.raise();
                     }
                 };
-                boolean includeSubclasses = includeSubclasses(arguments);
-                JavaClass type = javaType(arguments, heap);
-                Iterator it = getInstances(heap.heap, type, includeSubclasses);
+                Iterator it = getInstances(heap.heap, arguments);
                 Object[] buffer = new Object[1024];
                 while (it.hasNext()) {
                     dispatchInstances(it, consumer, buffer);
@@ -171,7 +161,9 @@ final class HeapObject implements TruffleObject {
         }
 
         @CompilerDirectives.TruffleBoundary
-        private static Iterator getInstances(Heap delegate, final JavaClass clazz, final boolean includeSubclasses) {
+        private static Iterator getInstances(Heap delegate, Object[] arguments) {
+            boolean includeSubclasses = arguments.length < 2 || !Boolean.TRUE.equals(arguments[2]);
+            JavaClass clazz = arguments.length < 1 ? null : delegate.getJavaClassByName((String) arguments[1]);
             // special case for all subclasses of java.lang.Object
             if (includeSubclasses && clazz.getSuperClass() == null) {
                 return delegate.getAllInstancesIterator();
