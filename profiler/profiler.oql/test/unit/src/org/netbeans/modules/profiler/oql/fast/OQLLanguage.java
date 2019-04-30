@@ -19,8 +19,10 @@
 package org.netbeans.modules.profiler.oql.fast;
 
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.InteropLibrary;
@@ -28,9 +30,11 @@ import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.UnknownIdentifierException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
+import com.oracle.truffle.api.library.CachedLibrary;
 import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.library.LibraryFactory;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.RootNode;
 import java.io.File;
 import java.net.URI;
@@ -106,46 +110,87 @@ final class HeapObject implements TruffleObject {
     }
 
     @ExportMessage
-    Object invokeMember(String member, Object[] arguments) throws UnsupportedMessageException, ArityException, UnknownIdentifierException, UnsupportedTypeException {
-        if ("forEachObject".equals(member)) {
-            Consumer<Object> consumer = (value) -> {
-                try {
-                    InstanceObject obj = new InstanceObject((Instance)value);
-                    LibraryFactory.resolve(InteropLibrary.class).getUncached().execute(arguments[0], obj);
-                } catch (UnsupportedTypeException ex) {
-                    Exceptions.printStackTrace(ex);
-                } catch (ArityException ex) {
-                    Exceptions.printStackTrace(ex);
-                } catch (UnsupportedMessageException ex) {
-                    Exceptions.printStackTrace(ex);
+    static class InvokeMember extends Object {
+        static final Object receiver(Object[] args) {
+            return args[0];
+        }
+
+        private static boolean includeSubclasses(Object[] arguments) {
+            boolean includeSubclasses = arguments.length < 2 || !Boolean.TRUE.equals(arguments[2]);
+            return includeSubclasses;
+        }
+
+        private static JavaClass javaType(Object[] arguments, HeapObject heap1) {
+            JavaClass type = arguments.length < 1 ? null : heap1.heap.getJavaClassByName((String) arguments[1]);
+            return type;
+        }
+
+        @Specialization(limit = "3")
+        static Object invokeMember(
+            HeapObject heap, String member, Object[] arguments,
+            @CachedLibrary(value = "receiver(arguments)") InteropLibrary interop
+        ) throws UnsupportedMessageException, ArityException, UnknownIdentifierException, UnsupportedTypeException {
+            if ("forEachObject".equals(member)) {
+                Consumer<Object> consumer = (value) -> {
+                    try {
+                        InstanceObject obj = new InstanceObject((Instance)value);
+                        interop.execute(receiver(arguments), obj);
+                    } catch (UnsupportedTypeException | ArityException | UnsupportedMessageException ex) {
+                        CompilerDirectives.transferToInterpreter();
+                        throw ex.raise();
+                    }
+                };
+                boolean includeSubclasses = includeSubclasses(arguments);
+                JavaClass type = javaType(arguments, heap);
+                Iterator it = getInstances(heap.heap, type, includeSubclasses);
+                Object[] buffer = new Object[1024];
+                while (it.hasNext()) {
+                    dispatchInstances(it, consumer, buffer);
+                }
+                return heap;
+            }
+            throw UnknownIdentifierException.create(member);
+        }
+
+        private static void dispatchInstances(Iterator it, Consumer<Object> consumer, Object[] buffer) {
+            int len = fillInBuffer(it, buffer);
+            for (int i = 0; i < len; i++) {
+                consumer.accept(buffer[i]);
+            }
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        private static int fillInBuffer(Iterator it, Object[] buf) {
+            for (int i = 0; i < buf.length; i++) {
+                if (!it.hasNext()) {
+                    return i;
+                }
+                buf[i] = it.next();
+            }
+            return buf.length;
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        private static Iterator getInstances(Heap delegate, final JavaClass clazz, final boolean includeSubclasses) {
+            // special case for all subclasses of java.lang.Object
+            if (includeSubclasses && clazz.getSuperClass() == null) {
+                return delegate.getAllInstancesIterator();
+            }
+            return new TreeIterator<Instance, JavaClass>(clazz) {
+
+                @Override
+                protected Iterator<Instance> getSameLevelIterator(JavaClass popped) {
+                    return popped.getInstances().iterator();
+                }
+
+                @Override
+                protected Iterator<JavaClass> getTraversingIterator(JavaClass popped) {
+                    return includeSubclasses ? popped.getSubClasses().iterator() : Collections.EMPTY_LIST.iterator();
                 }
             };
-            boolean includeSubclasses = arguments.length < 2 || !Boolean.TRUE.equals(arguments[2]);
-            JavaClass type = arguments.length < 1 ? null : heap.getJavaClassByName((String) arguments[1]);
-            getInstances(heap, type, includeSubclasses).forEachRemaining(consumer);
-            return this;
         }
-        throw UnknownIdentifierException.create(member);
     }
 
-    public Iterator getInstances(Heap delegate, final JavaClass clazz, final boolean includeSubclasses) {
-        // special case for all subclasses of java.lang.Object
-        if (includeSubclasses && clazz.getSuperClass() == null) {
-            return delegate.getAllInstancesIterator();
-        }
-        return new TreeIterator<Instance, JavaClass>(clazz) {
-
-            @Override
-            protected Iterator<Instance> getSameLevelIterator(JavaClass popped) {
-                return popped.getInstances().iterator();
-            }
-
-            @Override
-            protected Iterator<JavaClass> getTraversingIterator(JavaClass popped) {
-                return includeSubclasses ? popped.getSubClasses().iterator() : Collections.EMPTY_LIST.iterator();
-            }
-        };
-    }
 
 }
 
