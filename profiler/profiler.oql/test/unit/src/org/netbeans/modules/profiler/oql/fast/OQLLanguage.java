@@ -175,7 +175,7 @@ class InstanceObject implements TruffleObject {
     @ExportMessage
     long readMember(String name) throws UnknownIdentifierException {
         if (name.equals("length") && value instanceof PrimitiveArrayInstance) {
-            return value.getSize();
+            return ((PrimitiveArrayInstance) value).getLength();
         }
         throw UnknownIdentifierException.create(name);
     }

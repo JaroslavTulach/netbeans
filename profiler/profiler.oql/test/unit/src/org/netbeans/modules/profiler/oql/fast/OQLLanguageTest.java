@@ -49,7 +49,7 @@ public class OQLLanguageTest {
     public void walkHeapInJs() throws Exception {
         URL smallHeap = OQLLanguageTest.class.getResource("../engine/api/impl/small_heap.bin");
         assertNotNull("small_heap.bin found", smallHeap);
-        Source src = Source.newBuilder("oql", smallHeap).build();
+        Source dump = Source.newBuilder("oql", smallHeap).build();
         Context ctx = Context.newBuilder("oql", "js").allowHostAccess(HostAccess.ALL).build();
 
         Value countInstances = ctx.eval("js", "(function(heap) {\n"
@@ -65,8 +65,8 @@ public class OQLLanguageTest {
                 + "})\n"
         );
 
-        Value heap = ctx.eval(src);
+        Value heap = ctx.eval(dump);
         Value count = countInstances.execute(heap);
-        assertEquals("Heap searched for long int[]", 2, count.asInt());
+        assertEquals("Heap searched for long int[]", 1, count.asInt());
     }
 }
