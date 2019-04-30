@@ -52,7 +52,7 @@ public class OQLLanguageTest {
         Source dump = Source.newBuilder("oql", smallHeap).build();
         Context ctx = Context.newBuilder("oql", "js").allowHostAccess(HostAccess.ALL).build();
 
-        Value countInstances = ctx.eval("js", "(function(heap) {\n"
+        Source countSrc = Source.newBuilder("js", "(function(heap) {\n"
                 + "var now = new Date().getTime();\n"
                 + "var count = 0;\n"
                 + "heap.forEachObject(function(x) {\n"
@@ -62,8 +62,8 @@ public class OQLLanguageTest {
                 + "print(count);\n"
                 + "print('Took ' + (end - now) + ' ms');\n"
                 + "return count;\n"
-                + "})\n"
-        );
+                + "})\n", "count.js").build();
+        Value countInstances = ctx.eval(countSrc);
 
         Value heap = ctx.eval(dump);
         Value count = countInstances.execute(heap);
