@@ -1164,7 +1164,7 @@ PKGINST=${pkg.svr4.pkginst}</echo>
           description="Try running the IDE interactively.
 It is possible to use -Ddebug.port=3234 -Ddebug.pause=y to start the system in debug mode" 
    >
-    <script language="javascript">
+    <script language="nashorn">
         v = ''
         i = new Packages.java.util.TreeMap(project.getProperties()).entrySet().iterator()
         while (i.hasNext()) {
