@@ -18,6 +18,7 @@
  */
 package org.netbeans.modules.htmlui;
 
+import org.netbeans.modules.htmlui.jfx.NbBrowsers;
 import java.awt.EventQueue;
 import java.net.URL;
 import java.util.concurrent.CountDownLatch;

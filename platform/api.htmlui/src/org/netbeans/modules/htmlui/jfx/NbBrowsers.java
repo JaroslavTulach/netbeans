@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.netbeans.modules.htmlui;
+package org.netbeans.modules.htmlui.jfx;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -43,7 +43,7 @@ import net.java.html.boot.fx.FXBrowsers;
 import net.java.html.js.JavaScriptBody;
 import org.openide.util.NbBundle;
 
-final class NbBrowsers {
+public final class NbBrowsers {
     static {
         Platform.setImplicitExit(false);
     }
