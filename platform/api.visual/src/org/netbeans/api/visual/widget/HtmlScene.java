@@ -53,7 +53,7 @@ import org.netbeans.api.htmlui.HTMLComponent;
 
 final class HtmlScene {
     private final Scene scene;
-    
+
     static void open(Scene scene, Rectangle bounds) {
         HtmlScene view = new HtmlScene(scene);
         JComponent c = Pages.initializeCanvas(view, bounds);
@@ -68,14 +68,19 @@ final class HtmlScene {
 
     @HTMLComponent(url = "canvas.html", type = JComponent.class)
     static void initializeCanvas(HtmlScene canvas, Rectangle bounds) {
+        final Scene s = canvas.scene;
+        initializeCanvas(s, bounds);
+    }
+
+    static void initializeCanvas(Scene s, Rectangle bounds) {
         GraphicsContext2D context = GraphicsContext2D.getOrCreate("scene");
-        final Graphics2D g = DelGr.register(canvas.scene.getGraphics(), "[web]", new WebGraphics2D(context));
-        canvas.scene.setGraphics(g);
+        final Graphics2D g = DelGr.register(s.getGraphics(), "[web]", new WebGraphics2D(context));
+        s.setGraphics(g);
         if (bounds != null) {
-            canvas.scene.setPreferredBounds(bounds);
+            s.setPreferredBounds(bounds);
         }
-        canvas.scene.layout(true);
-        canvas.scene.paint(g);
+        s.layout(true);
+        s.paint(g);
     }
 
     private HtmlScene(Scene scene) {

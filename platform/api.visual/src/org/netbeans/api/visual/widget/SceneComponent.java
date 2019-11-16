@@ -524,6 +524,9 @@ final class SceneComponent extends JComponent implements Accessible, MouseListen
         resolveContext (widget.getParentWidget (), context);
     }
 
+    Scene getScene() {
+        return scene;
+    }
 
     private interface Operator {
 
