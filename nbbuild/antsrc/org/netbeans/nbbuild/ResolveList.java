@@ -20,16 +20,20 @@
 package org.netbeans.nbbuild;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.Mapper;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.util.FileUtils;
+import org.netbeans.nbbuild.extlibs.CreateDependencies;
 
 /** Expand the comma-separated list of properties to 
  *  their values and assing it to single property
@@ -43,6 +47,7 @@ public class ResolveList extends Task {
     private Mapper mapper;
     private File dir;
     private String path;
+    private Set<String> disabledModules;
     private Set<String> modules;
     private boolean ignoreMissing;
 
@@ -59,6 +64,14 @@ public class ResolveList extends Task {
         modules = new HashSet<>();
         while (tok.hasMoreTokens ())
             modules.add(tok.nextToken ());
+    }
+    
+    public void setDisabledModules(String s) {
+        StringTokenizer tok = new StringTokenizer(s, ", ");
+        disabledModules = new HashSet<>();
+        while (tok.hasMoreTokens()) {
+            disabledModules.add(tok.nextToken());
+        }
     }
     
     public void setIgnoreMissing(boolean m) {
@@ -162,6 +175,16 @@ public class ResolveList extends Task {
                         oneValue = clusterDir + "/" + oneValue;
                         oneFile = sndFile;
                     }
+                    
+                    if (disabledModules != null) try {
+                        String cnb = CreateDependencies.findCnb(oneFile);
+                        if (cnb != null && disabledModules.contains(cnb)) {
+                            continue;
+                        }
+                    } catch (IOException ex) {
+                        throw new BuildException(ex);
+                    }
+                    
 
                     if (oneValue != null && oneValue.length() > 0) {
                         value.append(prefix).append(oneValue);

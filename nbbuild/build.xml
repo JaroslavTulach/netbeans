@@ -274,7 +274,7 @@ metabuild.hash=${metabuild.hash}</echo>
   <target name="init-module-list" depends="bootstrap,init-tasks,prepare-vanilla-javac">
     <!-- Define modules. -->
     <checkmoduleconfigs nbroot=".."/>
-    <resolvelist name="allmodules" path="modules.fullpath" dir="${nb_all}" list="${nb.clusters.list}"/>
+    <resolvelist name="allmodules" path="modules.fullpath" dir="${nb_all}" list="${nb.clusters.list}" disabledmodules="${igv.disabled.modules}"/>
     <sortsuitemodules unsortedmodules="${modules.fullpath}" sortedmodulesproperty="modules.sorted"/>
   </target>
 
@@ -1645,7 +1645,7 @@ It is possible to use -Ddebug.port=3234 -Ddebug.pause=y to start the system in d
                               report="${nb.build.dir}/createlicensesummary.xml" 
                               nball=".." 
                               build="${netbeans.dest.dir}" 
-                              license="${netbeans.dest.dir}/LICENSE"
+                              license="${netbeans.dest.dir}/LICENSE.html"
                               licenseTargetDir="${netbeans.dest.dir}/licenses"
                               notice="${nb.build.dir}/notice-temp"
                               binary="true"
@@ -1669,7 +1669,15 @@ It is possible to use -Ddebug.port=3234 -Ddebug.pause=y to start the system in d
                 includes="${allmodules}"
         />
         <taskdef name="createdependencies" classname="org.netbeans.nbbuild.extlibs.CreateDependencies" classpath="${nbantext.jar}"/>
-        <createdependencies refid="source.dirset"  dependencies="${netbeans.dest.dir}/DEPENDENCIES"/>
+        <createdependencies refid="source.dirset"  dependencies="${netbeans.dest.dir}/DEPENDENCIES.html"/>
+        <zip zipfile="${netbeans.dest.dir}/DEPENDENCIES.zip">
+            <fileset dir="${netbeans.dest.dir}">
+                <include name="licenses/**"/>
+                <include name="*.html"/>
+                <exclude name="README.html"/>
+                <exclude name="CREDITS.html"/>
+            </fileset>
+        </zip>
     </target>
 
     <target name="-copy-platform-readme" depends="-check-nb-cluster" unless="has.nb.cluster">

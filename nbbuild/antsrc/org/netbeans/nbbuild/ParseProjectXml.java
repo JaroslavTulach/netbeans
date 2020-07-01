@@ -926,7 +926,7 @@ public final class ParseProjectXml extends Task {
         }
     }
 
-    private String getCodeNameBase(Document d) throws BuildException {
+    public final String getCodeNameBase(Document d) throws BuildException {
         Element data = getConfig(d);
         Element name = findNBMElement(data, "code-name-base");
         if (name == null) {

@@ -36,11 +36,19 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.DirSet;
 import org.apache.tools.ant.types.Resource;
+import org.netbeans.nbbuild.ParseProjectXml;
+import org.netbeans.nbbuild.XMLUtil;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * Creates a list of external binaries and their licenses.
@@ -73,7 +81,9 @@ public class CreateDependencies extends Task {
             }
             try (OutputStream os = new FileOutputStream(dependencies)) {
                 PrintWriter pw = new PrintWriter(new OutputStreamWriter(os, "UTF-8"));
-                pw.println("This project's dependencies");
+                pw.println("<html>");
+                pw.println("<body>");
+                pw.println("<h1>Apache NetBeans Dependencies</h1>");
                 pw.println();
 
                 Map<String, Set<String>> origin2TextsRuntime = new TreeMap<>();
@@ -84,24 +94,27 @@ public class CreateDependencies extends Task {
                     String origin = getMaybeMissing(headers, "Origin");
                     Map<String, Set<String>> origin2Texts = "compile-time".equals(headers.get("Type")) ? origin2TextsCompileTime : origin2TextsRuntime;
                     StringBuilder text = new StringBuilder();
-                    text.append(getMaybeMissing(headers, "Name"));
-                    text.append(":");
-                    if (headers.containsKey("Description")) {
-                        text.append(" ");
-                        text.append(headers.get("Description"));
-                    }
                     if (headers.containsKey("URL")) {
-                        text.append(" (");
+                        text.append("<h5><a href='http://");
                         text.append(headers.get("URL"));
-                        text.append(")");
+                        text.append("'>");
+                        text.append(getMaybeMissing(headers, "Name"));
+                        text.append("</a></h5>");
+                    } else {
+                        text.append("<h5>").append(getMaybeMissing(headers, "Name")).append("</h5>\n");
+                    }
+                    if (headers.containsKey("Description")) {
+                        text.append("<p>");
+                        text.append(headers.get("Description"));
+                        text.append("</p>");
+                    }
+                    if (headers.containsKey("Comment")) {
+                        text.append("<p>").append(headers.get("Comment")).append("</p>");
                     }
                     String licCode = getMaybeMissing(headers, "License");
                     String licName = licenseNames.getProperty(licCode);
                     String licDesc = licName != null ? licName : licCode;
-                    text.append("\nLicense: " + licDesc);
-                    if (headers.containsKey("Comment")) {
-                        text.append("\nComment: " + headers.get("Comment"));
-                    }
+                    text.append("<a href='licenses/").append(licCode).append("'>").append(licDesc).append("</a>");
                     origin2Texts.computeIfAbsent(origin, o -> new TreeSet<>()).add(text.toString());
                 }
 
@@ -114,18 +127,14 @@ public class CreateDependencies extends Task {
                 for (Entry<String, Map<String, Set<String>>> entry : dependenciesDesc.entrySet()) {
                     if (entry.getValue().isEmpty())
                         continue;
-                    pw.println();
+                    pw.print("<h2>");
                     pw.println(entry.getKey());
-                    char[] eq = new char[entry.getKey().length()];
-                    Arrays.fill(eq, '=');
-                    pw.println(new String(eq));
-                    pw.println();
+                    pw.println("</h2>");
 
                     for (Entry<String, Set<String>> org2Lines : entry.getValue().entrySet()) {
-                        pw.println("From: " + org2Lines.getKey());
+                        pw.println("<h3>From: " + org2Lines.getKey() + "</h3>");
                         for (String line : org2Lines.getValue()) {
-                            pw.print("  - ");
-                            pw.println(line.replace("\n", "\n    "));
+                            pw.println(line.replace("\n", "<br>"));
                         }
                         pw.println();
                     }
@@ -142,7 +151,7 @@ public class CreateDependencies extends Task {
         if (headers.containsKey(headerName)) {
             return headers.get(headerName);
         } else {
-            return "<unknown>";
+            return "unknown";
         }
     }
 
@@ -154,8 +163,34 @@ public class CreateDependencies extends Task {
         }
         return file2LicenseHeaders;
     }
+    
+    private String findCnb(String modulePath) throws IOException {
+        File projectDir = new File(getProject().getProperty("nb_all"), modulePath.replace('/', File.separatorChar));
+        return findCnb(projectDir);
+    }
+    
+    
+    public static String findCnb(File projectDir) throws IOException {
+        File projectXml = new File(new File(projectDir, "nbproject"), "project.xml");
+        if (!projectXml.isFile()) {
+            return null;
+        }
+        Document pDoc;
+        try {
+            pDoc = XMLUtil.parse(new InputSource(projectXml.toURI().toString()),
+                    false, true, /*XXX*/null, null);
+        } catch (SAXException ex) {
+            throw new IOException(ex);
+        }
+        try {
+            return new ParseProjectXml().getCodeNameBase(pDoc);
+        } catch (BuildException ex) {
+            return null;
+        }
+    }
 
     private void processModule(String module, Map<String, Map<String, String>> file2LicenseHeaders) throws IOException {
+        if (isDisabledModule(module)) return;
         File d = new File(new File(getProject().getProperty("nb_all"), module), "external");
         Set<String> hgFiles = VerifyLibsAndLicenses.findHgControlledFiles(d);
         Map<String,Map<String,String>> binary2License = CreateLicenseSummary.findBinary2LicenseHeaderMapping(hgFiles, d);
@@ -170,6 +205,19 @@ public class CreateDependencies extends Task {
             }
             file2LicenseHeaders.put(n, headers); //TODO: check unique!
         }
+    }
+
+    private boolean isDisabledModule(String module) throws IOException {
+        String s = getProject().getProperty("igv.disabled.modules");
+        if (s != null) {
+            String cnb = findCnb(module);
+            for (String item : s.split(",")) {
+                if (item.trim().equals(cnb)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 }
