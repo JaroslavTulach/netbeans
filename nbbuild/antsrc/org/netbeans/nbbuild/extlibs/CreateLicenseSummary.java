@@ -19,6 +19,8 @@
 package org.netbeans.nbbuild.extlibs;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -208,9 +210,11 @@ public class CreateLicenseSummary extends Task {
 
             Set<String> notices = new HashSet<>();
             Set<String> licenseNames = new TreeSet<>();
+            Map<String, Integer> foundNotices = null;
 
+            
             if(binary) {
-                evaluateBinaries(licenseWriter, noticeWriter, notices, licenseNames);
+                foundNotices = evaluateBinaries(licenseWriter, noticeWriter, notices, licenseNames);
             }
             evaluateLicenseInfo(licenseWriter, noticeWriter, notices, licenseNames);
 
@@ -254,6 +258,10 @@ public class CreateLicenseSummary extends Task {
                             StandardCopyOption.REPLACE_EXISTING);
                 }
 
+            }
+            
+            if (foundNotices != null) {
+                dumpNotices(licenseWriter, foundNotices);
             }
 
             licenseWriter.flush();
@@ -346,7 +354,7 @@ public class CreateLicenseSummary extends Task {
         }
     }
 
-    private void evaluateBinaries(final PrintWriter licenseWriter, final PrintWriter noticeWriter, Set<String> notices, Set<String> licenseNames) throws IOException {
+    private Map<String, Integer> evaluateBinaries(final PrintWriter licenseWriter, final PrintWriter noticeWriter, Set<String> notices, Set<String> licenseNames) throws IOException {
         Map<Long, Map<String, String>> crc2License = findCrc2LicenseHeaderMapping();
         Map<String, Map<String, String>> binaries2LicenseHeaders = new TreeMap<>();
         StringBuilder testBinariesAreUnique = new StringBuilder();
@@ -362,7 +370,7 @@ public class CreateLicenseSummary extends Task {
             }
         }
         if (binaries2LicenseHeaders.isEmpty())
-            return ;
+            return null;
         pseudoTests.put("testBinariesAreUnique", testBinariesAreUnique.length() > 0 ? "Some binaries are duplicated (edit nbbuild/antsrc/org/netbeans/nbbuild/extlibs/ignored-binary-overlaps as needed)" + testBinariesAreUnique : null);
         
         licenseWriter.println();
@@ -384,6 +392,8 @@ public class CreateLicenseSummary extends Task {
         if(licenseTargetDir != null) {
         } else {
         }
+        
+        Map<String,Integer> foundNotices = new HashMap<>();
         
         for (Map.Entry<String, Map<String, String>> entry : binaries2LicenseHeaders.entrySet()) {
             String binary = entry.getKey();
@@ -413,10 +423,17 @@ public class CreateLicenseSummary extends Task {
             if (e != null) {
                 File f = new File(new File(this.licenseTargetDir, "notice"), "" + binary.hashCode());
                 f.getParentFile().mkdirs();
-                try (InputStream is = jf.getInputStream(e); FileOutputStream os = new FileOutputStream(f)) {
+                ByteArrayOutputStream os = new ByteArrayOutputStream();
+                try (InputStream is = jf.getInputStream(e)) {
                     copy(is, os);
                 }
-                licenseWriter.print("<a href='licenses/notice/" + binary.hashCode() + "'>notice</a>");
+                String text = new String(os.toByteArray(), "UTF-8");
+                Integer key = foundNotices.get(text);
+                if (key == null) {
+                    key = foundNotices.size() + 1;
+                    foundNotices.put(text, key);
+                }
+                licenseWriter.print("<a href='#notices-" + key + "'>notice</a>");
             }
             licenseWriter.println("</td>");
             jf.close();
@@ -447,6 +464,22 @@ public class CreateLicenseSummary extends Task {
 //                        pw.println(binary);
 //                    }
 //                }
+
+        return foundNotices;
+    }
+
+    private void dumpNotices(final PrintWriter licenseWriter, Map<String, Integer> foundNotices) {
+        licenseWriter.print("<h1>Notices</h1>\n");
+        for (Entry<String, Integer> entry : foundNotices.entrySet()) {
+            String text = entry.getKey();
+            Integer key = entry.getValue();
+            
+            licenseWriter.print("<hr>\n");
+            licenseWriter.print("<a name='notices-" + key + "'></a>\n");
+            licenseWriter.print("<pre>\n");
+            licenseWriter.print(text);
+            licenseWriter.print("</pre>\n");
+        }
     }
 
     private static ZipEntry findNotice(JarFile jf) {
