@@ -222,6 +222,9 @@ public class CreateLicenseSummary extends Task {
             if(licenseTargetDir != null) {
                 licenseTargetDir.mkdirs();
             }
+            
+            licenseWriter.println("<h1>Third Party Licenses</h1>");
+            
             for (String licenseName : licenseNames) {
                 if (licenseName == null) {
                     continue;
@@ -253,6 +256,11 @@ public class CreateLicenseSummary extends Task {
                         r.close();
                     }
                 } else {
+                    licenseWriter.println("<a name='licenses-" + licenseName + "'><h3>" + licenseName + "</h3></a>");
+                    String text = new String(Files.readAllBytes(license.toPath()), "UTF-8");
+                    licenseWriter.println("<pre>");
+                    licenseWriter.print(text);
+                    licenseWriter.println("</pre>");
                     File targetFile = new File(licenseTargetDir, licenseName);
                     Files.copy(license.toPath(), targetFile.toPath(),
                             StandardCopyOption.REPLACE_EXISTING);
@@ -323,7 +331,7 @@ public class CreateLicenseSummary extends Task {
                         Path relativePath = nball.toPath().relativize(f.toPath());
                         licenseWriter.println("         <tr>");
                         licenseWriter.println("           <td>" + relativePath + "</td>");
-                        licenseWriter.println("           <td><a href='licenses/" + fs.getLicenseRef() + "'>" + fs.getLicenseRef() + "</a></td>");
+                        licenseWriter.println("           <td><a href='#licenses-" + fs.getLicenseRef() + "'>" + fs.getLicenseRef() + "</a></td>");
                         licenseWriter.print("           <td>");
                         if (!notes.isEmpty()) {
                             licenseWriter.print("<a href='#notes-" + notes + "'>[" + notes + "]</a></td>");
@@ -405,17 +413,13 @@ public class CreateLicenseSummary extends Task {
             licenseWriter.println("       <tr>");
             licenseWriter.println("         <td>" + binary + "</td>");
             licenseWriter.println("         <td>" + getMaybeMissing(headers, "Version") + "</td>");
-            licenseWriter.println("         <td><a href='licenses/" 
-                    + getMaybeMissing(headers, "License") + "'>"
+            final String license = getMaybeMissing(headers, "License");
+            licenseWriter.println("         <td><a href='#licenses-" 
+                    + license + "'>"
                     + getMaybeMissing(headers, "License") + "</a>" 
                     + "</td>"
             );
-            String license = headers.get("License");
-            if (license != null) {
-                licenseNames.add(license);
-            } else {
-                throw new BuildException("Missing license for " + binary);
-            }
+            licenseNames.add(license);
             
             JarFile jf = new JarFile(jarFile);
             ZipEntry e = findNotice(jf);
