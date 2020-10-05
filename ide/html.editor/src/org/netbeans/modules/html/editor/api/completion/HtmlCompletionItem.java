@@ -401,6 +401,13 @@ public class HtmlCompletionItem implements CompletionItem {
         return hash;
     }
 
+    @Override
+    public String toString() {
+        return getItemText();
+    }
+    
+    
+
     //------------------------------------------------------------------------------
     /**
      * Completion item representing a JSP tag including its prefix eg.
