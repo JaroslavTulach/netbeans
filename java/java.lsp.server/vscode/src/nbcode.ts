@@ -24,30 +24,34 @@ import * as path from 'path';
 import { spawn, ChildProcessByStdio } from 'child_process';
 import { Readable } from 'stream';
 
+export interface LaunchInfo {
+    clusters: string[];
+    extensionPath: string;
+    storagePath: string;
+    jdkHome: string | unknown;
+}
+
 export function launch(
-    clusters: string[],
-    extensionPath: string,
-    storagePath: string,
-    jdkHome: string | unknown,
+    info: LaunchInfo,
     ...extraArgs : string[]
 ): ChildProcessByStdio<null, Readable, Readable> {
     let nbexec = os.platform() === 'win32' ? 
         os.arch() === 'x64' ? 'nbexec64.exe' : 'nbexec.exe' 
         : 'nbexec';
-    const nbexecPath = path.join(extensionPath, 'nbcode', 'platform', 'lib', nbexec);
+    const nbexecPath = path.join(info.extensionPath, 'nbcode', 'platform', 'lib', nbexec);
     let nbexecPerm = fs.statSync(nbexecPath);
     if (!nbexecPerm.isFile()) {
         throw `Cannot execute ${nbexecPath}`;
     }
 
-    const userDir = path.join(storagePath, "userdir");
+    const userDir = path.join(info.storagePath, "userdir");
     fs.mkdirSync(userDir, {recursive: true});
     let userDirPerm = fs.statSync(userDir);
     if (!userDirPerm.isDirectory()) {
         throw `Cannot create ${userDir}`;
     }
 
-    let clusterPath = clusters.join(path.delimiter);
+    let clusterPath = info.clusters.join(path.delimiter);
     let ideArgs: string[] = [
         "--nosplash", "--nogui", "--branding", "nbcode",
         "-J-Djava.awt.headless=true",
@@ -78,8 +82,8 @@ export function launch(
 
         "--clusters", clusterPath, "--userdir", userDir
     ];
-    if (jdkHome) {
-        ideArgs.push('--jdkhome', jdkHome as string);
+    if (info.jdkHome) {
+        ideArgs.push('--jdkhome', info.jdkHome as string);
     }
     ideArgs.push(...extraArgs);
 
@@ -100,7 +104,13 @@ if (typeof process === 'object' && process.argv0 === 'node') {
     let clusters = fs.readdirSync(nbcode).filter(c => c !== 'bin' && c !== 'etc').map(c => path.join(nbcode, c));
     let args = process.argv.slice(2);
     let globalStorage = path.join(os.homedir(), '.config', 'Code', 'User', 'globalStorage', 'jlahoda.apache-netbeans-java');
-    let p = launch(clusters, extension, globalStorage, null, ...args);
+    let info = {
+        clusters : clusters,
+        extensionPath: extension,
+        storagePath : globalStorage,
+        jdkHome : null
+    };
+    let p = launch(info, ...args);
     p.stdout.on('data', function(data) {
         console.log(data.toString());
     });

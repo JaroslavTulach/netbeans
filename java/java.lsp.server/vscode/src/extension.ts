@@ -34,7 +34,6 @@ import * as vscode from 'vscode';
 import * as launcher from './nbcode';
 
 let client: LanguageClient;
-let nbProcess : ChildProcess | null = null;
 let debugPort: number = -1;
 
 function findClusters(): string[] {
@@ -64,6 +63,13 @@ export function activate(context: ExtensionContext) {
     //verify acceptable JDK is available/set:
     let specifiedJDK = workspace.getConfiguration('netbeans').get('jdkhome');
 
+    let info = {
+        clusters : findClusters(),
+        extensionPath: context.extensionPath,
+        storagePath : context.globalStoragePath,
+        jdkHome : specifiedJDK
+    };
+
     vscode.extensions.all.forEach((e, index) => {
         if (e.extensionPath.indexOf("redhat.java") >= 0) {
             vscode.window.showInformationMessage(`redhat.java found at ${e.extensionPath} - supressing`);
@@ -92,15 +98,22 @@ export function activate(context: ExtensionContext) {
                 collectedText = null;
             }
         }
-        let p = launcher.launch(findClusters(), context.extensionPath, context.globalStoragePath, specifiedJDK, "--modules", "--list");
+        let p = launcher.launch(info, "--modules", "--list");
         p.stdout.on('data', function(d: any) {
             logAndWaitForEnabled(d.toString());
         });
         p.stderr.on('data', function(d: any) {
             logAndWaitForEnabled(d.toString());
         });
-        nbProcess = p;
-        nbProcess.on('close', function(code: number) {
+        context.subscriptions.push({
+            dispose: function() {
+                if (!p.killed) {
+                    launcher.launch(info, "--exit");
+                }
+                p.kill();
+            }
+        });
+        p.on('close', function(code: number) {
             if (code != 0) {
                 vscode.window.showWarningMessage("Java Language Server exited with " + code);
             }
@@ -116,7 +129,7 @@ export function activate(context: ExtensionContext) {
             } else {
                 log.appendLine("Exit code " + code);
             }
-            nbProcess = null;
+            p.kill();
         });
     });
 
@@ -134,9 +147,7 @@ export function activate(context: ExtensionContext) {
             });
             server.listen(async () => {
                 const address: any = server.address();
-                const srv = launcher.launch(findClusters(),
-                    context.extensionPath, context.globalStoragePath,
-                    specifiedJDK,
+                const srv = launcher.launch(info,
                     `--start-java-language-server=connect:${address.port}`,
                     `--start-java-debug-adapter-server=listen:0`
                 );
@@ -233,9 +244,6 @@ export function activate(context: ExtensionContext) {
 }
 
 export function deactivate(): Thenable<void> {
-    if (nbProcess != null) {
-        nbProcess.kill();
-    }
     if (!client) {
         return Promise.resolve();
     }
