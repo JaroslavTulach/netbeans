@@ -67,8 +67,8 @@ public final class NbVariablesRequestHandler {
             Models.CompoundModel localsModel = localsModelProvider.getModel(debugger.getSession());
             int threadId;
             if (container instanceof NbScope) {
-                container = localsModel.getRoot();
                 threadId = ((NbScope) container).getFrame().getThreadId();
+                container = localsModel.getRoot();
             } else {
                 threadId = context.getThreadsProvider().getThreadObjects().findObjectThread(arguments.getVariablesReference());
             }
@@ -137,8 +137,8 @@ public final class NbVariablesRequestHandler {
 
         int threadId;
         if (container instanceof NbScope) {
-            container = localsModel.getRoot();
             threadId = ((NbScope) container).getFrame().getThreadId();
+            container = localsModel.getRoot();
         } else {
             threadId = context.getThreadsProvider().getThreadObjects().findObjectThread(args.getVariablesReference());
         }
