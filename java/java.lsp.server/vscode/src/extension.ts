@@ -34,6 +34,7 @@ import * as vscode from 'vscode';
 import * as launcher from './nbcode';
 
 let client: LanguageClient;
+let nbProcess : ChildProcess | null = null;
 let debugPort: number = -1;
 
 function findClusters(): string[] {
@@ -105,15 +106,8 @@ export function activate(context: ExtensionContext) {
         p.stderr.on('data', function(d: any) {
             logAndWaitForEnabled(d.toString());
         });
-        context.subscriptions.push({
-            dispose: function() {
-                if (!p.killed) {
-                    launcher.launch(info, "--exit");
-                }
-                p.kill();
-            }
-        });
-        p.on('close', function(code: number) {
+        nbProcess = p;
+        nbProcess.on('close', function(code: number) {
             if (code != 0) {
                 vscode.window.showWarningMessage("Java Language Server exited with " + code);
             }
@@ -129,7 +123,7 @@ export function activate(context: ExtensionContext) {
             } else {
                 log.appendLine("Exit code " + code);
             }
-            p.kill();
+            nbProcess = null;
         });
     });
 
@@ -145,7 +139,7 @@ export function activate(context: ExtensionContext) {
             server.on('error', (err) => {
                 reject(err);
             });
-            server.listen(async () => {
+            server.listen(() => {
                 const address: any = server.address();
                 const srv = launcher.launch(info,
                     `--start-java-language-server=connect:${address.port}`,
@@ -244,6 +238,9 @@ export function activate(context: ExtensionContext) {
 }
 
 export function deactivate(): Thenable<void> {
+    if (nbProcess != null) {
+        nbProcess.kill();
+    }
     if (!client) {
         return Promise.resolve();
     }

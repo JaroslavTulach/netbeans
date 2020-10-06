@@ -26,7 +26,6 @@ import org.netbeans.spi.sendopts.Arg;
 import org.netbeans.spi.sendopts.ArgsProcessor;
 import org.netbeans.spi.sendopts.Description;
 import org.netbeans.spi.sendopts.Env;
-import org.openide.LifecycleManager;
 import org.openide.util.NbBundle.Messages;
 
 public final class LspArgsProcessor implements ArgsProcessor {
@@ -41,19 +40,8 @@ public final class LspArgsProcessor implements ArgsProcessor {
     @Messages("DESC_StartJavaDebugAdapterServer=Starts the Java Debug Adapter Server")
     public String debugPort;
 
-    @Arg(longName="exit")
-    @Description(shortDescription="#DESC_Exit")
-    @Messages("DESC_Exit=Shutdown the system")
-    public boolean exit;
-
     @Override
     public void process(Env env) throws CommandException {
-        if (exit) {
-            org.openide.util.RequestProcessor.getDefault().post(() -> {
-                LifecycleManager.getDefault().exit(0);
-            });
-            return;
-        }
         if (lsPort != null) {
             try {
                 ConnectionSpec connectTo = ConnectionSpec.parse(lsPort);
