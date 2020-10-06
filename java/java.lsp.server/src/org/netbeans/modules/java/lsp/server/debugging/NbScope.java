@@ -35,4 +35,9 @@ public final class NbScope {
     public String getName() {
         return name;
     }
+
+    public NbFrame getFrame() {
+        return frame;
+    }
+
 }

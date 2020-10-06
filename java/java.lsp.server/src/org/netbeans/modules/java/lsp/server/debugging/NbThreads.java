@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import org.eclipse.lsp4j.debug.StoppedEventArguments;
 
 import org.eclipse.lsp4j.debug.TerminatedEventArguments;
@@ -33,6 +34,7 @@ import org.netbeans.api.debugger.DebuggerManager;
 import org.netbeans.api.debugger.DebuggerManagerAdapter;
 import org.netbeans.api.debugger.Session;
 import org.netbeans.api.debugger.jpda.JPDADebugger;
+import org.netbeans.api.debugger.jpda.JPDAThread;
 import org.netbeans.spi.debugger.ui.DebuggingView.DVSupport;
 import org.netbeans.spi.debugger.ui.DebuggingView.DVThread;
 
@@ -46,6 +48,8 @@ public final class NbThreads {
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final Map<Integer, DVThread> threads = new HashMap<>();
     private final Map<DVThread, Integer> threadIds = new HashMap<>();
+    private final Map<JPDAThread, Integer> jpdaThreadIds = new HashMap<>();
+    private final ThreadObjects threadObjects = new ThreadObjects();
 
     public void initialize(DebugAdapterContext context, Map<String, Object> options) {
         DebuggerManager.getDebuggerManager().addDebuggerListener(DebuggerManager.PROP_SESSIONS, new DebuggerManagerAdapter() {
@@ -102,6 +106,7 @@ public final class NbThreads {
                             id = lastId++;
                             threads.put(id, dvThread);
                             threadIds.put(dvThread, id);
+                            jpdaThreadIds.put(getJPDAThread(dvThread), id);
                         } else {
                             // It could be among all threads already
                             id = idInteger;
@@ -117,6 +122,7 @@ public final class NbThreads {
                     id = 0;
                     synchronized (threads) {
                         Integer idObject = threadIds.remove(dvThread);
+                        jpdaThreadIds.remove(getJPDAThread(dvThread));
                         if (idObject != null) {
                             id = idObject;
                             threads.remove(id);
@@ -138,6 +144,7 @@ public final class NbThreads {
                         if (dvThread.isInStep()) {
                             eventName = "step";
                         } else if (dvThread.getCurrentBreakpoint() != null) {
+                            context.getBreakpointManager().notifyBreakpointHit(id, dvThread.getCurrentBreakpoint());
                             eventName = "breakpoint";
                         } else {
                             eventName = "pause";
@@ -152,6 +159,7 @@ public final class NbThreads {
                     dvThread = (DVThread) evt.getNewValue();
                     id = getId(dvThread);
                     assert id > 0: "Unknown ID for thread " + dvThread;
+                    context.getBreakpointManager().notifyBreakpointHit(id, null);
                     // Should not sponaneously resume, the client should request resume and thus knows about it.
                     break;
             }
@@ -163,6 +171,7 @@ public final class NbThreads {
                     int id = lastId++;
                     threads.put(id, dvThread);
                     threadIds.put(dvThread, id);
+                    jpdaThreadIds.put(getJPDAThread(dvThread), id);
                 }
             }
         }
@@ -193,11 +202,35 @@ public final class NbThreads {
         }
     }
 
+    /**
+     * Get the thread ID, or <code>0</code> if the thread was not found.
+     */
+    public int getId(JPDAThread thread) {
+        int id = 0;
+        Integer idObject;
+        synchronized (threads) {
+            idObject = jpdaThreadIds.get(thread);
+        }
+        if (idObject != null) {
+            id = idObject;
+        }
+        return id;
+    }
+
+    private JPDAThread getJPDAThread(DVThread dvThread) {
+        // JPDA implementation implements Supplier.
+        return ((Supplier<JPDAThread>) dvThread).get();
+    }
+
     public void visitThreads(BiConsumer<Integer, DVThread> threadsConsumer) {
         synchronized (threads) {
             for (Map.Entry<Integer, DVThread> entry : threads.entrySet()) {
                 threadsConsumer.accept(entry.getKey(), entry.getValue());
             }
         }
+    }
+
+    public ThreadObjects getThreadObjects() {
+        return threadObjects;
     }
 }

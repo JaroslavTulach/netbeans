@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 
 import com.sun.jdi.AbsentInformationException;
 
@@ -45,7 +46,7 @@ import org.netbeans.spi.debugger.ui.DebuggingView.DVThread;
  *
  * @author Martin Entlicher
  */
-public final class JPDADVThread implements DVThread, WeakCacheMap.KeyedValue<JPDAThreadImpl> {
+public final class JPDADVThread implements DVThread, WeakCacheMap.KeyedValue<JPDAThreadImpl>, Supplier<JPDAThread> {
     
     private final DebuggingViewSupportImpl dvSupport;
     private final JPDAThreadImpl t;
@@ -168,7 +169,12 @@ public final class JPDADVThread implements DVThread, WeakCacheMap.KeyedValue<JPD
     public JPDAThreadImpl getKey() {
         return t;
     }
-    
+
+    @Override
+    public JPDAThread get() {
+        return t;
+    }
+
     private class ThreadListDelegate extends AbstractList<DVThread> {
 
         private final List<JPDAThread> threads;

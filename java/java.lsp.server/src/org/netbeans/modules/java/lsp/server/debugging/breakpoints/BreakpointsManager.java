@@ -23,24 +23,38 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.netbeans.api.debugger.Breakpoint;
 
 import org.netbeans.api.debugger.DebuggerManager;
+import org.netbeans.api.debugger.jpda.ExceptionBreakpoint;
+import org.netbeans.api.debugger.jpda.Variable;
+import org.netbeans.api.debugger.jpda.event.JPDABreakpointEvent;
+import org.netbeans.api.debugger.jpda.event.JPDABreakpointListener;
+import org.netbeans.modules.java.lsp.server.debugging.NbThreads;
 
-public final class BreakpointManager {
+public final class BreakpointsManager {
 
-    private static final Logger LOGGER = Logger.getLogger(BreakpointManager.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(BreakpointsManager.class.getName());
 
+    private final NbThreads threadsProvider;
     private final List<NbBreakpoint> breakpoints;
     private final HashMap<String, HashMap<Integer, NbBreakpoint>> sourceToBreakpoints;
     private final AtomicInteger nextBreakpointId = new AtomicInteger(1);
+    private final AtomicReference<ExceptionBreakpoint> exceptionBreakpoint = new AtomicReference<>(null);
+    private final ExceptionBreakpointListener exceptionBreakpointListener = new ExceptionBreakpointListener();
+    private final Map<Integer, Breakpoint> hitBreakpoints = new ConcurrentHashMap<>();
+    private final Map<Integer, Variable> exceptionsByThreads = new ConcurrentHashMap<>();
 
     /**
      * Constructor.
      */
-    public BreakpointManager() {
+    public BreakpointsManager(NbThreads threadsProvider) {
+        this.threadsProvider = threadsProvider;
         this.breakpoints = Collections.synchronizedList(new ArrayList<>(5));
         this.sourceToBreakpoints = new HashMap<>();
     }
@@ -49,7 +63,7 @@ public final class BreakpointManager {
      * Set breakpoints to the given source.
      * <p>
      * Deletes all old breakpoints from the source.
-     * 
+     *
      * @return a new list of breakpoints in that source
      */
     public NbBreakpoint[] setBreakpoints(String source, NbBreakpoint[] breakpoints, boolean sourceModified) {
@@ -153,6 +167,31 @@ public final class BreakpointManager {
         return breakpointMap.values().toArray(new NbBreakpoint[0]);
     }
 
+    void setExceptionBreakpoints(boolean notifyCaught, boolean notifyUncaught) {
+        ExceptionBreakpoint newEP = null;
+        if (notifyCaught || notifyUncaught) {
+            int catchType = notifyCaught ? notifyUncaught ? ExceptionBreakpoint.TYPE_EXCEPTION_CAUGHT_UNCAUGHT : ExceptionBreakpoint.TYPE_EXCEPTION_CAUGHT : ExceptionBreakpoint.TYPE_EXCEPTION_UNCAUGHT;
+            newEP = ExceptionBreakpoint.create("*", catchType);
+            DebuggerManager.getDebuggerManager().addBreakpoint(newEP);
+        }
+        ExceptionBreakpoint oldEP = exceptionBreakpoint.getAndSet(newEP);
+        if (oldEP != null) {
+            DebuggerManager.getDebuggerManager().removeBreakpoint(oldEP);
+        }
+    }
+
+    public void notifyBreakpointHit(int threadId, Breakpoint currentBreakpoint) {
+        if (currentBreakpoint != null) {
+            hitBreakpoints.put(threadId, currentBreakpoint);
+        } else {
+            hitBreakpoints.remove(threadId);
+        }
+    }
+
+    public Variable getExceptionOn(int threadId) {
+        return exceptionsByThreads.get(threadId);
+    }
+
     /**
      * Breakpoints are always being set from the client. We must clean them so that
      * they are not duplicated on the next start.
@@ -162,9 +201,26 @@ public final class BreakpointManager {
         for (NbBreakpoint breakpoint : breakpoints) {
             debuggerManager.removeBreakpoint(breakpoint.getNBBreakpoint());
         }
+        ExceptionBreakpoint ep = exceptionBreakpoint.getAndSet(null);
+        if (ep != null) {
+            debuggerManager.removeBreakpoint(ep);
+        }
         debuggerManager.removeAllWatches();
         this.sourceToBreakpoints.clear();
         this.breakpoints.clear();
         this.nextBreakpointId.set(1);
+    }
+
+    private class ExceptionBreakpointListener implements JPDABreakpointListener {
+
+        @Override
+        public void breakpointReached(JPDABreakpointEvent event) {
+            Variable exceptionVariable = event.getVariable();
+            if (exceptionVariable != null) {
+                int threadId = threadsProvider.getId(event.getThread());
+                exceptionsByThreads.put(threadId, exceptionVariable);
+            }
+        }
+        
     }
 }

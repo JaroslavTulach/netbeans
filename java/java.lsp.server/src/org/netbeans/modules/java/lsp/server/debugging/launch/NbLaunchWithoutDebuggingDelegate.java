@@ -26,7 +26,7 @@ import org.netbeans.modules.java.lsp.server.debugging.DebugAdapterContext;
  *
  * @author martin
  */
-public class NbLaunchWithoutDebuggingDelegate extends NbLaunchDelegate {
+public final class NbLaunchWithoutDebuggingDelegate extends NbLaunchDelegate {
 
     protected static final long RUNINTERMINAL_TIMEOUT = 10 * 1000;
     private Consumer<DebugAdapterContext> onFinishCallback;

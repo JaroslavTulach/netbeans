@@ -25,13 +25,14 @@ import java.nio.charset.Charset;
 import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.lsp4j.debug.services.IDebugProtocolClient;
 
-import org.netbeans.modules.java.lsp.server.debugging.breakpoints.BreakpointManager;
+import org.netbeans.modules.java.lsp.server.debugging.breakpoints.BreakpointsManager;
 import org.netbeans.modules.java.lsp.server.debugging.launch.NbDebugSession;
-import org.netbeans.modules.java.lsp.server.debugging.utils.IdCollection;
-import org.netbeans.modules.java.lsp.server.debugging.utils.RecyclableObjectPool;
 
 public final class DebugAdapterContext {
 
@@ -49,14 +50,13 @@ public final class DebugAdapterContext {
     private boolean isVmStopOnEntry = false;
     private boolean isDebugMode = true;
 
-    private final IdCollection<String> sourceReferences = new IdCollection<>();
-    private final RecyclableObjectPool<Integer, Object> recyclableIdPool = new RecyclableObjectPool<>();
+    private final AtomicInteger lastSourceReferenceId = new AtomicInteger(0);
+    private final Map<Integer, String> sourceReferences = new ConcurrentHashMap<>();
 
     private final NBConfigurationSemaphore configurationSemaphore = new NBConfigurationSemaphore();
     private final NbSourceProvider sourceProvider = new NbSourceProvider(this);
     private final NbThreads threadsProvider = new NbThreads();
-    private final BreakpointManager breakpointManager = new BreakpointManager();
-    private final ExceptionManager exceptionManager = new ExceptionManager();
+    private final BreakpointsManager breakpointManager = new BreakpointsManager(threadsProvider);
 
     public DebugAdapterContext() {
     }
@@ -184,11 +184,9 @@ public final class DebugAdapterContext {
     }
 
     public int createSourceReference(String uri) {
-        return sourceReferences.create(uri);
-    }
-
-    public RecyclableObjectPool<Integer, Object> getRecyclableIdPool() {
-        return recyclableIdPool;
+        int id = lastSourceReferenceId.incrementAndGet();
+        sourceReferences.put(id, uri);
+        return id;
     }
 
     public void setDebuggeeEncoding(Charset encoding) {
@@ -229,11 +227,7 @@ public final class DebugAdapterContext {
         return this.threadsProvider;
     }
 
-    public BreakpointManager getBreakpointManager() {
+    public BreakpointsManager getBreakpointManager() {
         return this.breakpointManager;
-    }
-
-    public ExceptionManager getExceptionManager() {
-        return this.exceptionManager;
     }
 }

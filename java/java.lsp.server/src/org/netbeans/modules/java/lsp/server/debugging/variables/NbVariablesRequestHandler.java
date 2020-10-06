@@ -58,15 +58,19 @@ public final class NbVariablesRequestHandler {
         CompletableFuture<VariablesResponse> future = new CompletableFuture<>();
 
         VariablesResponse response = new VariablesResponse();
-        Object container = context.getRecyclableIdPool().getObjectById(arguments.getVariablesReference());
+        Object container = context.getThreadsProvider().getThreadObjects().getObject(arguments.getVariablesReference());
         if (container == null) {
-            // Nothing on an old container
+            // Nothing, or an old container
             response.setVariables(new Variable[0]);
         } else {
-            JPDADebugger debugger = ((NbDebugSession) context.getDebugSession()).getDebugger();
+            JPDADebugger debugger = context.getDebugSession().getDebugger();
             Models.CompoundModel localsModel = localsModelProvider.getModel(debugger.getSession());
+            int threadId;
             if (container instanceof NbScope) {
                 container = localsModel.getRoot();
+                threadId = ((NbScope) container).getFrame().getThreadId();
+            } else {
+                threadId = context.getThreadsProvider().getThreadObjects().findObjectThread(arguments.getVariablesReference());
             }
             List<Variable> list = new ArrayList<>();
             try {
@@ -82,7 +86,7 @@ public final class NbVariablesRequestHandler {
                     String name = localsModel.getDisplayName(child);
                     String value = String.valueOf(localsModel.getValueAt(child, LOCALS_TO_STRING_COLUMN_ID));
                     String type = String.valueOf(localsModel.getValueAt(child, LOCALS_TYPE_COLUMN_ID));
-                    int id = context.getRecyclableIdPool().addObject(1, child);
+                    int id = context.getThreadsProvider().getThreadObjects().addObject(threadId, child);
                     Variable variable = new Variable();
                     variable.setName(name);
                     variable.setValue(value);
@@ -119,7 +123,7 @@ public final class NbVariablesRequestHandler {
             return future;
         }
 
-        Object container = context.getRecyclableIdPool().getObjectById(args.getVariablesReference());
+        Object container = context.getThreadsProvider().getThreadObjects().getObject(args.getVariablesReference());
         // container is null means the stack frame is continued by user manually.
         if (container == null) {
             ErrorUtilities.completeExceptionally(future,
@@ -131,8 +135,12 @@ public final class NbVariablesRequestHandler {
         JPDADebugger debugger = ((NbDebugSession) context.getDebugSession()).getDebugger();
         Models.CompoundModel localsModel = localsModelProvider.getModel(debugger.getSession());
 
+        int threadId;
         if (container instanceof NbScope) {
             container = localsModel.getRoot();
+            threadId = ((NbScope) container).getFrame().getThreadId();
+        } else {
+            threadId = context.getThreadsProvider().getThreadObjects().findObjectThread(args.getVariablesReference());
         }
         String varName = args.getName();
         // We need to search for varName in the container:
@@ -150,7 +158,7 @@ public final class NbVariablesRequestHandler {
                 localsModel.setValueAt(varChild, LOCALS_VALUE_COLUMN_ID, args.getValue());
                 String value = String.valueOf(localsModel.getValueAt(varChild, LOCALS_TO_STRING_COLUMN_ID));
                 String type = String.valueOf(localsModel.getValueAt(varChild, LOCALS_TYPE_COLUMN_ID));
-                int id = context.getRecyclableIdPool().addObject(1, varChild);
+                int id = context.getThreadsProvider().getThreadObjects().addObject(threadId, varChild);
                 SetVariableResponse response = new SetVariableResponse();
                 response.setType(type);
                 response.setValue(value);

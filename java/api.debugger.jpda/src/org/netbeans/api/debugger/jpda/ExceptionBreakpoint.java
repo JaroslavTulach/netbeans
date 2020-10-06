@@ -58,12 +58,23 @@ public class ExceptionBreakpoint extends JPDABreakpoint {
     /** Property name constant. */
     public static final String          PROP_CONDITION = "condition"; // NOI18N
 
-    /** Catch type constant. <i>[sic]</i> "caught" */
+    /** Catch type constant. <i>[sic]</i> "caught"
+     * @deprecated Use {@link #TYPE_EXCEPTION_CAUGHT */
+    @Deprecated
     public static final int             TYPE_EXCEPTION_CATCHED = 1;
-    /** Catch type constant. <i>[sic]</i> "uncaught" */
+    /** Catch type constant. <i>[sic]</i> "uncaught"
+     * @deprecated Use {@link #TYPE_EXCEPTION_UNCAUGHT */
     public static final int             TYPE_EXCEPTION_UNCATCHED = 2;
-    /** Catch type constant. <i>[sic]</i> "caught/uncaught" */
+    /** Catch type constant. <i>[sic]</i> "caught/uncaught"
+     * @deprecated Use {@link #TYPE_EXCEPTION_CAUGHT_UNCAUGHT */
     public static final int             TYPE_EXCEPTION_CATCHED_UNCATCHED = 3;
+
+    /** Catch type constant. */
+    public static final int             TYPE_EXCEPTION_CAUGHT = 1;
+    /** Catch type constant. */
+    public static final int             TYPE_EXCEPTION_UNCAUGHT = 2;
+    /** Catch type constant. */
+    public static final int             TYPE_EXCEPTION_CAUGHT_UNCAUGHT = 3;
 
     private String                      exceptionClassName = "";
     private String[]                    classFilters = new String [0];

@@ -179,13 +179,13 @@ public final class NbProtocolServer implements IDebugProtocolServer {
             DVThread dvThread = context.getThreadsProvider().getThread(args.getThreadId());
             if (dvThread != null) {
                 dvThread.resume();
-                context.getRecyclableIdPool().removeObjectsByOwner(args.getThreadId());
+                context.getThreadsProvider().getThreadObjects().cleanObjects(args.getThreadId());
             }
             response.setAllThreadsContinued(false);
         } else {
             JPDADebugger debugger = context.getDebugSession().getDebugger();
             debugger.getSession().getCurrentEngine().getActionsManager().doAction("continue");
-            context.getRecyclableIdPool().removeAllObjects();
+            context.getThreadsProvider().getThreadObjects().cleanAll();
             response.setAllThreadsContinued(true);
         }
         return CompletableFuture.completedFuture(response);
@@ -273,7 +273,7 @@ public final class NbProtocolServer implements IDebugProtocolServer {
                 int to = args.getLevels() != null ? from + args.getLevels() : Integer.MAX_VALUE;
                 List<DVFrame> stackFrames = dvThread.getFrames(from, to);
                 for (DVFrame frame : stackFrames) {
-                    int frameId = context.getRecyclableIdPool().addObject(args.getThreadId(), new NbFrame(args.getThreadId(), frame));
+                    int frameId = context.getThreadsProvider().getThreadObjects().addObject(args.getThreadId(), new NbFrame(args.getThreadId(), frame));
                     int line = frame.getLine();
                     if (line < 0) { // unknown
                         line = 0;
@@ -309,12 +309,12 @@ public final class NbProtocolServer implements IDebugProtocolServer {
     @Override
     public CompletableFuture<ScopesResponse> scopes(ScopesArguments args) {
         List<Scope> result = new ArrayList<>();
-        NbFrame stackFrame = (NbFrame) context.getRecyclableIdPool().getObjectById(args.getFrameId());
+        NbFrame stackFrame = (NbFrame) context.getThreadsProvider().getThreadObjects().getObject(args.getFrameId());
         if (stackFrame != null) {
             stackFrame.getDVFrame().makeCurrent(); // The scopes and variables are always provided with respect to the current frame
             // TODO: Provide Truffle scopes.
             NbScope localScope = new NbScope(stackFrame, "Local");
-            int localScopeId = context.getRecyclableIdPool().addObject(stackFrame.getThreadId(), localScope);
+            int localScopeId = context.getThreadsProvider().getThreadObjects().addObject(stackFrame.getThreadId(), localScope);
             Scope scope = new Scope();
             scope.setName(localScope.getName());
             scope.setVariablesReference(localScopeId);
@@ -382,7 +382,7 @@ public final class NbProtocolServer implements IDebugProtocolServer {
                     "Failed to evaluate. Reason: Empty expression cannot be evaluated.",
                     ResponseErrorCode.InvalidParams);
             }
-            NbFrame stackFrame = (NbFrame) context.getRecyclableIdPool().getObjectById(args.getFrameId());
+            NbFrame stackFrame = (NbFrame) context.getThreadsProvider().getThreadObjects().getObject(args.getFrameId());
             if (stackFrame == null) {
                 throw ErrorUtilities.createResponseErrorException(
                     "Failed to evaluate. Reason: Unknown frame " + args.getFrameId(),
@@ -391,7 +391,7 @@ public final class NbProtocolServer implements IDebugProtocolServer {
             stackFrame.getDVFrame().makeCurrent(); // The evaluation is always performed with respect to the current frame
             DVThread dvThread = stackFrame.getDVFrame().getThread();
             int threadId = context.getThreadsProvider().getId(dvThread);
-            JPDADebugger debugger = ((NbDebugSession) context.getDebugSession()).getDebugger();
+            JPDADebugger debugger = context.getDebugSession().getDebugger();
             Variable variable;
             try {
                 variable = debugger.evaluate(expression);
@@ -403,14 +403,14 @@ public final class NbProtocolServer implements IDebugProtocolServer {
             EvaluateResponse response = new EvaluateResponse();
             TruffleVariable truffleVariable = TruffleVariable.get(variable);
             if (truffleVariable != null) {
-                int referenceId = context.getRecyclableIdPool().addObject(threadId, truffleVariable);
+                int referenceId = context.getThreadsProvider().getThreadObjects().addObject(threadId, truffleVariable);
                 response.setResult(truffleVariable.getDisplayValue());
                 response.setVariablesReference(referenceId);
                 response.setType(truffleVariable.getType());
                 response.setIndexedVariables(truffleVariable.isLeaf() ? 0 : Integer.MAX_VALUE);
             } else {
                 if (variable instanceof ObjectVariable) {
-                    int referenceId = context.getRecyclableIdPool().addObject(threadId, variable);
+                    int referenceId = context.getThreadsProvider().getThreadObjects().addObject(threadId, variable);
                     int indexedVariables = ((ObjectVariable) variable).getFieldsCount();
                     String toString;
                     try {
@@ -436,17 +436,19 @@ public final class NbProtocolServer implements IDebugProtocolServer {
     @Override
     public CompletableFuture<ExceptionInfoResponse> exceptionInfo(ExceptionInfoArguments args) {
         CompletableFuture<ExceptionInfoResponse> future = new CompletableFuture<>();
-        ExceptionManager.ExceptionInfo exceptionInfo = context.getExceptionManager().getException(args.getThreadId());
-        if (exceptionInfo == null) {
+        Variable exceptionVariable = context.getBreakpointManager().getExceptionOn(args.getThreadId());
+        if (exceptionVariable == null) {
             ErrorUtilities.completeExceptionally(future, "No exception exists in thread " + args.getThreadId(), ResponseErrorCode.InvalidParams);
         } else {
-            String typeName = exceptionInfo.getException().getLocalizedMessage(); // TODO
-            String exceptionToString = exceptionInfo.getException().toString();
+            JPDADebugger debugger = context.getDebugSession().getDebugger();
+            Throwable exception = (Throwable) exceptionVariable.createMirrorObject();
+            String typeName = exception.getLocalizedMessage(); // TODO
+            String exceptionToString = exception.toString();
 
             ExceptionInfoResponse response = new ExceptionInfoResponse();
             response.setExceptionId(typeName);
             response.setDescription(exceptionToString);
-            response.setBreakMode(exceptionInfo.isCaught() ? ExceptionBreakMode.ALWAYS : ExceptionBreakMode.USER_UNHANDLED);
+            //response.setBreakMode(exceptionInfo.isCaught() ? ExceptionBreakMode.ALWAYS : ExceptionBreakMode.USER_UNHANDLED);
             future.complete(response);
         }
         return future;

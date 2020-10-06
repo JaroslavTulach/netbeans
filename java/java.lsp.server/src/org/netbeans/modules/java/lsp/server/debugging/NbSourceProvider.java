@@ -113,7 +113,7 @@ public final class NbSourceProvider {
 
     private static final class CacheMap<K,V> extends LinkedHashMap<K, V> {
 
-        private static final int SIZE_LIMIT = 1000;
+        private static final int SIZE_LIMIT = 5000;
 
         @Override
         protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {

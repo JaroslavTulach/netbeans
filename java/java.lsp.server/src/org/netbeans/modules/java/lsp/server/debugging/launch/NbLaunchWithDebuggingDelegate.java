@@ -26,13 +26,10 @@ import org.netbeans.modules.java.lsp.server.debugging.DebugAdapterContext;
  *
  * @author martin
  */
-public class NbLaunchWithDebuggingDelegate extends NbLaunchDelegate {
+public final class NbLaunchWithDebuggingDelegate extends NbLaunchDelegate {
 
     @Override
     public void postLaunch(Map<String, Object> launchArguments, DebugAdapterContext context) {
-        // context.getTreadsProvider().initialize(context, Collections.emptyMap());
-        // send an InitializedEvent to indicate that the debugger is ready to accept
-        // configuration requests (e.g. SetBreakpointsRequest, SetExceptionBreakpointsRequest).
         context.getClient().initialized();
     }
 
@@ -42,7 +39,5 @@ public class NbLaunchWithDebuggingDelegate extends NbLaunchDelegate {
         context.setAttached(false);
         context.setSourcePaths((String[])launchArguments.get("sourcePaths"));
         context.setVmStopOnEntry((Boolean)launchArguments.get("stopOnEntry"));
-        // context.setMainClass(LaunchRequestHandler.parseMainClassWithoutModuleName(launchArguments.get("mainClass")));
-// TODO:        context.setStepFilters(launchArguments.get("stepFilters"));
     }
 }

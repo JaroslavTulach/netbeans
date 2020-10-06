@@ -126,7 +126,7 @@ public final class NbBreakpointsRequestHandler {
         String[] filters = arguments.getFilters();
         boolean notifyCaught = ArrayUtils.contains(filters, CAUGHT_EXCEPTION_FILTER_NAME);
         boolean notifyUncaught = ArrayUtils.contains(filters, UNCAUGHT_EXCEPTION_FILTER_NAME);
-        //TODO: context.getDebugSession().setExceptionBreakpoints(notifyCaught, notifyUncaught);
+        context.getBreakpointManager().setExceptionBreakpoints(notifyCaught, notifyUncaught);
         return CompletableFuture.completedFuture(null);
     }
 
