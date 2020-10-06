@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -60,8 +61,10 @@ public abstract class NbLaunchDelegate {
 
     public final CompletableFuture<Void> nbLaunch(FileObject toRun, DebugAdapterContext context, boolean debug, Consumer<NbProcessConsole.ConsoleMessage> consoleMessages) {
         Pair<ActionProvider, String> providerAndCommand = findTarget(toRun, debug);
+        CompletableFuture<Void> launchFuture = new CompletableFuture<>();
         if (providerAndCommand == null) {
-            throw new VMDisconnectedException("Cannot find debug action!"); //TODO: message, locations
+            launchFuture.completeExceptionally(new CancellationException("Cannot find " + (debug ? "debug" : "run") + " action!"));
+            return launchFuture;
         }
         NbProcessConsole ioContext = new NbProcessConsole(consoleMessages);
         ActionProgress progress = new ActionProgress() {
@@ -72,7 +75,6 @@ public abstract class NbLaunchDelegate {
                 ioContext.stop();
             }
         };
-        CompletableFuture<Void> launchFuture = new CompletableFuture<>();
         if (debug) {
             DebuggerManager.getDebuggerManager().addDebuggerListener(new DebuggerManagerAdapter() {
                 @Override
@@ -139,20 +141,42 @@ public abstract class NbLaunchDelegate {
                                  : mainSource ? new String[] {ActionProvider.COMMAND_RUN_SINGLE}
                                               : new String[] {ActionProvider.COMMAND_TEST_SINGLE, ActionProvider.COMMAND_RUN_SINGLE};
 
-        OUTER: for (String commandCandidate : actions) {
-            for (ActionProvider ap : actionProviders) {
-                if (new HashSet<>(Arrays.asList(ap.getSupportedActions())).contains(commandCandidate) &&
-                    ap.isActionEnabled(commandCandidate, testLookup)) {
-                    provider = ap;
-                    command = commandCandidate;
-                    break OUTER;
-                }
+        for (String commandCandidate : actions) {
+            provider = findActionProvider(commandCandidate, actionProviders, testLookup);
+            if (provider != null) {
+                command = commandCandidate;
+                break;
             }
         }
 
-        if (provider == null)
+        if (provider == null) {
+            command = debug ? mainSource ? ActionProvider.COMMAND_DEBUG
+                                         : ActionProvider.COMMAND_DEBUG // DEBUG_TEST is missing?
+                            : mainSource ? ActionProvider.COMMAND_RUN
+                                         : ActionProvider.COMMAND_TEST;
+            provider = findActionProvider(command, actionProviders, testLookup);
+        }
+        if (provider == null) {
             return null;
-
+        }
         return Pair.of(provider, command);
+    }
+
+    private static boolean supportsAction(ActionProvider ap, String action) {
+        for (String supportedAction : ap.getSupportedActions()) {
+            if (supportedAction.equals(action)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static ActionProvider findActionProvider(String action, Collection<ActionProvider> actionProviders, Lookup enabledOnLookup) {
+        for (ActionProvider ap : actionProviders) {
+            if (supportsAction(ap, action) && ap.isActionEnabled(action, enabledOnLookup)) {
+                return ap;
+            }
+        }
+        return null;
     }
 }
