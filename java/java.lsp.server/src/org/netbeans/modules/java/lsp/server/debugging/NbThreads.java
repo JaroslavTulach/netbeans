@@ -118,7 +118,7 @@ public final class NbThreads {
                     context.getClient().thread(threadStartEvent);
                     break;
                 case DVSupport.PROP_THREAD_DIED:
-                    dvThread = (DVThread) evt.getNewValue();
+                    dvThread = (DVThread) evt.getOldValue();
                     id = 0;
                     synchronized (threads) {
                         Integer idObject = threadIds.remove(dvThread);

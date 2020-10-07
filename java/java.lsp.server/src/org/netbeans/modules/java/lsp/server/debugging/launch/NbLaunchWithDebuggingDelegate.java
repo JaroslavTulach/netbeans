@@ -37,7 +37,7 @@ public final class NbLaunchWithDebuggingDelegate extends NbLaunchDelegate {
     public void preLaunch(Map<String, Object> launchArguments, DebugAdapterContext context) {
         // debug only
         context.setAttached(false);
-        context.setSourcePaths((String[])launchArguments.get("sourcePaths"));
+        context.setSourcePaths((String[])launchArguments.getOrDefault("sourcePaths", new String[0]));
         context.setVmStopOnEntry((Boolean)launchArguments.get("stopOnEntry"));
     }
 }
