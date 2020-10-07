@@ -68,14 +68,7 @@ public class PrepareBundles {
 
         Path targetDir = Paths.get(args[0]);
         Path packagesDir = targetDir.resolve("package");
-        final ProcessBuilder builder = new ProcessBuilder("npm", "install").directory(packagesDir.toFile()).inheritIO();
-        for (Entry<String, String> e : builder.environment().entrySet()) {
-            if (e.getKey().toUpperCase().contains("PROXY")) {
-                System.err.println(e.getKey() + "=" + e.getValue());
-            }
-        }
-        final Process process = builder.start();
-        process.waitFor();
+        new ProcessBuilder("npm", "install").directory(packagesDir.toFile()).inheritIO().start().waitFor();
         Path bundlesDir = targetDir.resolve("bundles");
         Files.createDirectories(bundlesDir);
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(bundlesDir)) {
