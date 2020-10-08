@@ -4,5 +4,4 @@ OpenIDE-Module-Install: org/netbeans/modules/javascript2/editor/ModuleInstaller.
 OpenIDE-Module-Layer: org/netbeans/modules/javascript2/editor/resources/layer.xml
 OpenIDE-Module-Localizing-Bundle: org/netbeans/modules/javascript2/editor/Bundle.properties
 OpenIDE-Module-Specification-Version: 0.84
-AutoUpdate-Show-In-Client: false
-OpenIDE-Module-Recommends: cnb.org.netbeans.modules.html.editor, cnb.org.netbeans.modules.javascript2.html
+OpenIDE-Module-Recommends: cnb.org.netbeans.modules.html.editor

@@ -36,6 +36,9 @@ import org.openide.util.lookup.ProxyLookup;
  */
 public final class WebPageMetadata {
 
+    /**
+     * MIME type of the webpage content.
+     */
     public static final String MIMETYPE = "mimeType"; //NOI18N
 
     /**

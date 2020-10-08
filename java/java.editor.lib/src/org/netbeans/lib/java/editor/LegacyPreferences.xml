@@ -23,6 +23,6 @@
 
 <editor-preferences>
     <entry javaType="methodvalue" name="token-context-list">
-        <value><![CDATA[org.netbeans.modules.editor.java.NbJavaSettingsInitializer.getTokenContextList]]></value>
+        <value><![CDATA[org.netbeans.lib.java.editor.LegacyJavasettingsInitializer.getTokenContextList]]></value>
     </entry>
 </editor-preferences>
