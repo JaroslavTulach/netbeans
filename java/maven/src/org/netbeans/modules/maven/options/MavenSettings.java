@@ -38,7 +38,6 @@ import java.util.prefs.Preferences;
 import org.apache.maven.execution.MavenExecutionRequest;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.netbeans.api.annotations.common.CheckForNull;
-import org.netbeans.modules.maven.api.NbMavenProject;
 import org.netbeans.modules.maven.embedder.EmbedderFactory;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
