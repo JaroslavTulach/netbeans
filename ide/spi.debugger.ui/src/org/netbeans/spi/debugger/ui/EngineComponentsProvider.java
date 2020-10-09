@@ -74,7 +74,6 @@ public interface EngineComponentsProvider {
         private final boolean opened;
         private final boolean minimized;
         //private int order = Integer.MAX_VALUE;
-        private boolean initialized;
         
         private ComponentInfo(ComponentProvider provider, boolean opened, boolean minimized) {
             this.provider = provider;
@@ -87,12 +86,7 @@ public interface EngineComponentsProvider {
          * @return The component
          */
         public Component getComponent() {
-            this.initialized = true;
             return provider.getComponent();
-        }
-        
-        public boolean isInitialized() {
-            return initialized;
         }
         
         /**

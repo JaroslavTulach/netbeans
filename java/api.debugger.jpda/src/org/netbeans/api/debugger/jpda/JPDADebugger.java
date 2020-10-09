@@ -616,10 +616,6 @@ public abstract class JPDADebugger {
         return null;
     }
 
-    public void finish() {
-        throw new AbstractMethodError();
-    }
-
     /**
      * Get the session associated with this debugger.
      */

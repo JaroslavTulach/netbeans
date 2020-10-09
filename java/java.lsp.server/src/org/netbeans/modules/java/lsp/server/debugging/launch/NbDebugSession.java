@@ -41,7 +41,7 @@ public final class NbDebugSession {
     }
 
     public void terminate() {
-        debugger.finish();
+        debugger.getSession().kill();
     }
 
     public void setExceptionBreakpoints(boolean notifyCaught, boolean notifyUncaught) {

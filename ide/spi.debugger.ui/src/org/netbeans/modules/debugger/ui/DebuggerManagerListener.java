@@ -465,9 +465,6 @@ public class DebuggerManagerListener extends DebuggerManagerAdapter {
                         public void run() {
                             List<Component> retainOpenedComponents = new ArrayList<Component>(retainOpened.size());
                             for (ComponentInfo ci : retainOpened) {
-                                if (!ci.isInitialized()) {
-                                    continue;
-                                }
                                 Component c = ci.getComponent();
                                 if (c == null) {
                                     ErrorManager.getDefault().notify(new IllegalStateException("Null component from "+ci));
@@ -487,9 +484,6 @@ public class DebuggerManagerListener extends DebuggerManagerAdapter {
                             }
                             List<ComponentInfo> windowsToCloseCopy = (ArrayList<ComponentInfo>) ((ArrayList) windowsToClose).clone();
                             for (ComponentInfo ci : windowsToCloseCopy) {
-                                if (!ci.isInitialized()) {
-                                    continue;
-                                }
                                 Component c = ci.getComponent();
                                 if (retainOpenedComponents.contains(c)) {
                                     windowsToClose.remove(ci);
@@ -503,9 +497,6 @@ public class DebuggerManagerListener extends DebuggerManagerAdapter {
                             }
                             final List<TopComponent> topComponentsToClose = new ArrayList<TopComponent>(windowsToClose.size());
                             for (ComponentInfo ci : windowsToClose) {
-                                if (!ci.isInitialized()) {
-                                    continue;
-                                }
                                 Component c = ci.getComponent();
                                 if (c == null) {
                                     ErrorManager.getDefault().notify(new IllegalStateException("Null component from "+ci));
@@ -705,9 +696,6 @@ public class DebuggerManagerListener extends DebuggerManagerAdapter {
                 }
             }
             for (ComponentInfo ci : OPENED_COMPONENTS) {
-                if (!ci.isInitialized()) {
-                    continue;
-                }
                 Component c = ci.getComponent();
                 if (initiallyOpened.contains(c)) {
                     if (c instanceof TopComponent) {
