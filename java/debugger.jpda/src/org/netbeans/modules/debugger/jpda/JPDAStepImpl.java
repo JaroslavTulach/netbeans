@@ -145,6 +145,8 @@ public class JPDAStepImpl extends JPDAStep implements Executor {
                 StepRequestWrapper.addClassExclusionFilter(stepRequest, exclusionPatterns [i]);
                 logger.finer("   add pattern: "+exclusionPatterns[i]);
             }
+        } else {
+            exclusionPatterns = new String[]{};
         }
         return exclusionPatterns;
     }

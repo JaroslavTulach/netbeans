@@ -127,6 +127,7 @@ public abstract class JPDAStep {
      * {@link SmartSteppingFilter#getExclusionPatterns()} just for this step.
      *
      * @param classFilters A list of class filters
+     * @since 3.19
      */
     public void addSteppingFilters(String... classFilters) {
         if (this.classFilters == null) {
@@ -139,10 +140,11 @@ public abstract class JPDAStep {
     }
     
     /**
-     * Get the additional exclusion filters of this step
+     * Get the additional exclusion filters of this step.
      *
      * @return A list of exclusion patterns, or <code>null</code> when no additional
      * filters are provided
+     * @since 3.19
      */
     public String[] getSteppingFilters() {
         return classFilters;
@@ -154,6 +156,7 @@ public abstract class JPDAStep {
      *
      * @param stepThroughFilters <code>true</code> to step through the filters,
      *        <code>false</code> otherwise
+     * @since 3.19
      */
     public void setStepThroughFilters(boolean stepThroughFilters) {
         this.stepThroughFilters = stepThroughFilters;
@@ -164,6 +167,7 @@ public abstract class JPDAStep {
      *
      * @return <code>true</code> to step through the filters,
      *         <code>false</code> otherwise
+     * @since 3.19
      */
     public boolean isStepThroughFilters() {
         return stepThroughFilters;

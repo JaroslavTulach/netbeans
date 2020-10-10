@@ -19,7 +19,6 @@
 
 package org.netbeans.api.debugger.jpda;
 
-import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.connect.Connector.Argument;
 import com.sun.jdi.connect.ListeningConnector;
 import com.sun.jdi.request.EventRequest;
@@ -618,6 +617,7 @@ public abstract class JPDADebugger {
 
     /**
      * Get the session associated with this debugger.
+     * @since 3.19
      */
     public Session getSession() {
         throw new AbstractMethodError();
