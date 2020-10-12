@@ -26,10 +26,48 @@
             <code-name-base>org.netbeans.modules.java.lsp.server</code-name-base>
             <module-dependencies>
                 <dependency>
-                    <code-name-base>com.google.gson</code-name-base>
+                    <code-name-base>org.netbeans.api.annotations.common</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
-                    <run-dependency/>
+                    <run-dependency>
+                        <release-version>1</release-version>
+                        <specification-version>1.34</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
+                    <code-name-base>org.netbeans.api.debugger</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <release-version>1</release-version>
+                        <specification-version>1.64</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
+                    <code-name-base>org.netbeans.api.debugger.jpda</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <release-version>2</release-version>
+                        <specification-version>3.16</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
+                    <code-name-base>org.netbeans.api.io</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>1.13</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
+                    <code-name-base>org.netbeans.api.java</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <release-version>1</release-version>
+                        <specification-version>1.72</specification-version>
+                    </run-dependency>
                 </dependency>
                 <dependency>
                     <code-name-base>org.netbeans.api.annotations.common</code-name-base>
@@ -201,7 +239,7 @@
                     <compile-dependency/>
                     <run-dependency>
                         <release-version>1</release-version>
-                        <specification-version>1.26</specification-version>
+                        <specification-version>1.28</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -372,6 +410,14 @@
                         <specification-version>9.14</specification-version>
                     </run-dependency>
                 </dependency>
+                <dependency>
+                    <code-name-base>com.google.gson</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>2.7</specification-version>
+                    </run-dependency>
+                </dependency>
             </module-dependencies>
             <test-dependencies>
                 <test-type>
@@ -511,10 +557,6 @@
             <class-path-extension>
                 <runtime-relative-path>ext/commons-lang3-3.6.jar</runtime-relative-path>
                 <binary-origin>external/commons-lang3-3.6.jar</binary-origin>
-            </class-path-extension>
-            <class-path-extension>
-                <runtime-relative-path>ext/gson-2.7.jar</runtime-relative-path>
-                <binary-origin>external/gson-2.7.jar</binary-origin>
             </class-path-extension>
         </data>
     </configuration>
