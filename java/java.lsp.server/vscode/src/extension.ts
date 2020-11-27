@@ -37,6 +37,7 @@ import { ChildProcess } from 'child_process';
 import * as vscode from 'vscode';
 import * as launcher from './nbcode';
 import { StatusMessageRequest, ShowStatusMessageParams  } from './protocol';
+import * as explorer from './explorer';
 
 let client: LanguageClient;
 let nbProcess : ChildProcess | null = null;
@@ -109,6 +110,8 @@ function findJDK(onChange: (path : string | null) => void): void {
 }
 
 export function activate(context: ExtensionContext) {
+    explorer.register();
+
     let log = vscode.window.createOutputChannel("Apache NetBeans Language Server");
 
     let conf = workspace.getConfiguration();

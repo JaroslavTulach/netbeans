@@ -30,7 +30,15 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
-		"configuration": {
+        "views": {
+            "explorer": [
+                {
+                    "id": "nodeDependencies",
+                    "name": "Node Dependencies"
+                }
+            ]
+        },
+        "configuration": {
 			"title": "Java",
 			"properties": {
 				"netbeans.jdkhome": {
