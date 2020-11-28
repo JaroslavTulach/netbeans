@@ -2,90 +2,32 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
-class NodeDependenciesProvider implements vscode.TreeDataProvider<Dependency> {
-  constructor(private workspaceRoot: string) {}
+class VisualizerProvider implements vscode.TreeDataProvider<Visualizer> {
+  constructor(private root: Visualizer) {}
 
-  getTreeItem(element: Dependency): vscode.TreeItem {
+  getTreeItem(element: Visualizer): vscode.TreeItem {
     return element;
   }
 
-  getChildren(element?: Dependency): Thenable<Dependency[]> {
-    if (!this.workspaceRoot) {
-      vscode.window.showInformationMessage('No dependency in empty workspace');
-      return Promise.resolve([]);
-    }
-
+  getChildren(element?: Visualizer): Thenable<Visualizer[]> {
     if (element) {
-      return Promise.resolve(
-        this.getDepsInPackageJson(
-          path.join(this.workspaceRoot, 'node_modules', element.label, 'package.json')
-        )
-      );
+      return Promise.resolve(element.ch || []);
     } else {
-      const packageJsonPath = path.join(this.workspaceRoot, 'package.json');
-      if (this.pathExists(packageJsonPath)) {
-        return Promise.resolve(this.getDepsInPackageJson(packageJsonPath));
-      } else {
-        vscode.window.showInformationMessage('Workspace has no package.json');
-        return Promise.resolve([]);
-      }
+      return Promise.resolve([ this.root ]);
     }
-  }
-
-  /**
-   * Given the path to package.json, read all its dependencies and devDependencies.
-   */
-  private getDepsInPackageJson(packageJsonPath: string): Dependency[] {
-    if (this.pathExists(packageJsonPath)) {
-      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-
-      const toDep = (moduleName: string, version: string): Dependency => {
-        if (this.pathExists(path.join(this.workspaceRoot, 'node_modules', moduleName))) {
-          return new Dependency(
-            moduleName,
-            version,
-            vscode.TreeItemCollapsibleState.Collapsed
-          );
-        } else {
-          return new Dependency(moduleName, version, vscode.TreeItemCollapsibleState.None);
-        }
-      };
-
-      const deps = packageJson.dependencies
-        ? Object.keys(packageJson.dependencies).map(dep =>
-            toDep(dep, packageJson.dependencies[dep])
-          )
-        : [];
-      const devDeps = packageJson.devDependencies
-        ? Object.keys(packageJson.devDependencies).map(dep =>
-            toDep(dep, packageJson.devDependencies[dep])
-          )
-        : [];
-      return deps.concat(devDeps);
-    } else {
-      return [];
-    }
-  }
-
-  private pathExists(p: string): boolean {
-    try {
-      fs.accessSync(p);
-    } catch (err) {
-      return false;
-    }
-    return true;
   }
 }
 
-class Dependency extends vscode.TreeItem {
+class Visualizer extends vscode.TreeItem {
   constructor(
     public readonly label: string,
-    private version: string,
+    private version: number,
+    public ch: Visualizer[] | null,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState
   ) {
     super(label, collapsibleState);
     this.tooltip = `${this.label}-${this.version}`;
-    this.description = this.version;
+    this.description = `Describe ${this.version}`;
   }
 
   iconPath = {
@@ -95,9 +37,17 @@ class Dependency extends vscode.TreeItem {
 }
 
 export function register() {
+    let v = new Visualizer('root', 33, [
+      new Visualizer('chA', 1, null, vscode.TreeItemCollapsibleState.None),
+      new Visualizer('chB', 2, [
+        new Visualizer('deep1', 11, null, vscode.TreeItemCollapsibleState.None),
+        new Visualizer('deep2', 22, null, vscode.TreeItemCollapsibleState.None),
+      ], vscode.TreeItemCollapsibleState.Collapsed),
+      new Visualizer('chC', 3, null, vscode.TreeItemCollapsibleState.None),
+    ], vscode.TreeItemCollapsibleState.Expanded);
     vscode.window.registerTreeDataProvider(
       'nodeDependencies',
-      new NodeDependenciesProvider(vscode.workspace.rootPath || '')
+      new VisualizerProvider(v)
     );
 }
 
