@@ -45,9 +45,19 @@ export function register() {
       ], vscode.TreeItemCollapsibleState.Collapsed),
       new Visualizer('chC', 3, null, vscode.TreeItemCollapsibleState.None),
     ], vscode.TreeItemCollapsibleState.Expanded);
-    vscode.window.registerTreeDataProvider(
-      'nodeDependencies',
-      new VisualizerProvider(v)
+    let view = vscode.window.createTreeView(
+      'nodeDependencies', {
+        treeDataProvider: new VisualizerProvider(v),
+        canSelectMany: true,
+        showCollapseAll: true,
+      }
     );
+    view.message = "Showing Visualizers!";
+    view.onDidChangeSelection((ev) => {
+      if (ev.selection.length > 0) {
+          view.message = `Selected ${ev.selection[0].label}`;
+      }
+    });
+    view.title = "Showing Visualizers!";
 }
 
