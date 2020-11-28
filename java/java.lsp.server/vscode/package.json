@@ -1,10 +1,11 @@
 {
 	"name": "apache-netbeans-java",
 	"displayName": "Apache NetBeans Language Server",
-	"description": "An Apache NetBeans Language Server plugin for Visual Studio Code",
+	"description": "Apache NetBeans Language Server Extension for Visual Studio Code",
 	"author": "Apache NetBeans",
 	"license": "Apache 2.0",
 	"version": "0.1.0",
+	"preview": true,
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/apache/netbeans"
@@ -24,19 +25,20 @@
 	},
 	"activationEvents": [
 		"onLanguage:java",
+		"workspaceContains:**/*.java",
 		"workspaceContains:pom.xml",
 		"workspaceContains:build.gradle",
 		"onDebug"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
-        "views": {
-            "explorer": [
-                {
-                    "id": "nodeDependencies",
-                    "name": "Node Dependencies"
-                }
-            ]
+		"views": {
+			"explorer": [
+				{
+					"id": "nodeDependencies",
+					"name": "Node Dependencies"
+				}
+			]
 		},
 		"configuration": {
 			"title": "Java",
@@ -143,30 +145,30 @@
 				"category": "GraalVM"
 			},
 			{
-			  "command": "nodeDependencies.refreshEntry",
-			  "title": "Refresh",
-			  "icon": {
-				"light": "resources/light/refresh.svg",
-				"dark": "resources/dark/refresh.svg"
-			  }
+				"command": "nodeDependencies.refreshEntry",
+				"title": "Refresh",
+				"icon": {
+					"light": "resources/light/refresh.svg",
+					"dark": "resources/dark/refresh.svg"
+				}
 			},
 			{
-			  "command": "nodeDependencies.addEntry",
-			  "title": "Add"
+				"command": "nodeDependencies.addEntry",
+				"title": "Add"
 			},
 			{
-			  "command": "nodeDependencies.editEntry",
-			  "title": "Edit",
-			  "icon": {
-				"light": "resources/light/edit.svg",
-				"dark": "resources/dark/edit.svg"
-			  }
+				"command": "nodeDependencies.editEntry",
+				"title": "Edit",
+				"icon": {
+					"light": "resources/light/edit.svg",
+					"dark": "resources/dark/edit.svg"
+				}
 			},
 			{
-			  "command": "nodeDependencies.deleteEntry",
-			  "title": "Delete"
+				"command": "nodeDependencies.deleteEntry",
+				"title": "Delete"
 			}
-		  ],
+		],
 		"keybindings": [
 			{
 				"command": "java.workspace.compile",
@@ -186,37 +188,36 @@
 				}
 			],
 			"view/title": [
-			  {
-				"command": "nodeDependencies.refreshEntry",
-				"when": "view == nodeDependencies",
-				"group": "navigation"
-			  },
-			  {
-				"command": "nodeDependencies.addEntry",
-				"when": "view == nodeDependencies"
-			  }
+				{
+					"command": "nodeDependencies.refreshEntry",
+					"when": "view == nodeDependencies",
+					"group": "navigation"
+				},
+				{
+					"command": "nodeDependencies.addEntry",
+					"when": "view == nodeDependencies"
+				}
 			],
 			"view/item/context": [
-			  {
-				"command": "nodeDependencies.editEntry",
-				"when": "view == nodeDependencies && viewItem == node",
-				"group": "inline"
-			  },
-			  {
-				"command": "nodeDependencies.deleteEntry",
-				"when": "view == nodeDependencies && viewItem == node"
-			  }
+				{
+					"command": "nodeDependencies.editEntry",
+					"when": "view == nodeDependencies && viewItem == node",
+					"group": "inline"
+				},
+				{
+					"command": "nodeDependencies.deleteEntry",
+					"when": "view == nodeDependencies && viewItem == node"
+				}
 			]
-		  }
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./",
-		"lint": "eslint src --ext ts",
 		"watch": "tsc -watch -p ./",
-		"pretest": "npm run compile && npm run lint",
 		"test": "node ./out/test/runTest.js",
-		"nbcode": "node ./out/nbcode.js"
+		"nbcode": "node ./out/nbcode.js",
+		"nbjavac": "node ./out/nbcode.js -J-Dnetbeans.close=true --modules --install .*nbjavac.*"
 	},
 	"devDependencies": {
 		"@types/vscode": "^1.47.0",
