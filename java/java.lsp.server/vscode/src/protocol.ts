@@ -40,20 +40,15 @@ export namespace NodeQueryRequest {
 };
 
 export namespace NodeInfoRequest {
-    export const type = new RequestType<number, Data, void, void>('nodes/info');
+    export const init = new RequestType<string, Data, void, void>('nodes/explorermanager');
+    export const info = new RequestType<number, Data, void, void>('nodes/info');
+    export const children = new RequestType<number, number[], void, void>('nodes/children');
 
     export interface Data {
+        id : number; /* numeric ID of the node */
         name : string; /* Node.getName() */
         displayName : string; /* Node.getDisplayName() */
         shortDescription : string; /* Node.getShortDescription() */
         leaf : boolean; /* Node.getChildren() == LEAF */
     }
-};
-
-export namespace NodeChildrenRequest {
-    export const type = new RequestType<number, string[], void, void>('nodes/children');
-};
-
-export namespace NodeReleaseNotification {
-    export const type = new NotificationType<number, void>('nodes/release');
 };

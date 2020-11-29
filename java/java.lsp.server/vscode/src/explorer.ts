@@ -5,7 +5,19 @@ import { LanguageClient } from 'vscode-languageclient';
 import { NodeInfoRequest, NodeQueryRequest } from './protocol';
 
 class VisualizerProvider implements vscode.TreeDataProvider<Visualizer> {
-  constructor(private root: Visualizer) {}
+  private root: Promise<Visualizer[]>;
+
+  constructor(
+    private client: LanguageClient,
+    private id : string
+  ) {
+    this.root = new Promise((resolve) => {
+      client.sendRequest(NodeInfoRequest.init, id).then((node) => {
+        resolve([ new Visualizer(node) ]);
+        this._onDidChangeTreeData.fire();
+      });
+    });
+  }
 
   private _onDidChangeTreeData: vscode.EventEmitter<Visualizer | undefined | null | void> = new vscode.EventEmitter<Visualizer | undefined | null | void>();
   readonly onDidChangeTreeData: vscode.Event<Visualizer | undefined | null | void> = this._onDidChangeTreeData.event;
@@ -20,9 +32,16 @@ class VisualizerProvider implements vscode.TreeDataProvider<Visualizer> {
 
   getChildren(element?: Visualizer): Thenable<Visualizer[]> {
     if (element) {
-      return Promise.resolve(element.ch || []);
+      return this.client.sendRequest(NodeInfoRequest.children, element.data.id).then(async (arr) => {
+        let res = Array<Visualizer>();
+        for (let i = 0; i < arr.length; i++) {
+          let d = await this.client.sendRequest(NodeInfoRequest.info, arr[i]);
+          res.push(new Visualizer(d));
+        }
+        return res;
+      });
     } else {
-      return Promise.resolve([ this.root ]);
+      return this.root;
     }
   }
 }
@@ -30,7 +49,7 @@ class VisualizerProvider implements vscode.TreeDataProvider<Visualizer> {
 class Visualizer extends vscode.TreeItem {
   public ch : Visualizer[] | null;
   constructor(
-    private data : NodeInfoRequest.Data
+    public data : NodeInfoRequest.Data
   ) {
     super(data.displayName, data.leaf ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed);
     this.id = data.name;
@@ -46,31 +65,7 @@ export function register(c : LanguageClient) {
     vscode.window.showInformationMessage(msg, "OK");
     return "processed " + msg;
   });
-  class NodeData implements NodeInfoRequest.Data {
-    displayName : string;
-    shortDescription : string;
-    leaf : boolean;
-
-    constructor(
-      public name : string,
-      dispName : any,
-      public ch : Visualizer[] | null
-    ) {
-      this.displayName = dispName.toString(); 
-      this.shortDescription = 'Description for ' + this.displayName;
-      this.leaf = ch === null;
-    }
-  }
-
-    let v = new Visualizer(new NodeData('root', 33, [
-      new Visualizer(new NodeData('chA', 1, null)),
-      new Visualizer(new NodeData('chB', 2, [
-        new Visualizer(new NodeData('deep1', 11, null)),
-        new Visualizer(new NodeData('deep2', 22, null)),
-      ])),
-      new Visualizer(new NodeData('chC', 3, null)),
-    ]));
-    let vtp = new VisualizerProvider(v);
+    let vtp = new VisualizerProvider(c, "demo");
     let view = vscode.window.createTreeView(
       'nodeDependencies', {
         treeDataProvider: vtp,

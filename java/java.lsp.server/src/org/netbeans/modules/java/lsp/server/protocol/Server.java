@@ -25,7 +25,9 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -66,6 +68,8 @@ import org.netbeans.api.project.Sources;
 import org.netbeans.api.project.ui.OpenProjects;
 import org.netbeans.modules.java.lsp.server.Utils;
 import org.openide.filesystems.FileObject;
+import org.openide.nodes.Children;
+import org.openide.nodes.Node;
 import org.openide.util.Exceptions;
 import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
@@ -312,9 +316,77 @@ public final class Server {
         public void exit() {
         }
 
+//    export const info = new RequestType<number, Data, void, void>('nodes/info');
+//    export interface Data {
+//        id : number; /* numeric ID of the node */
+//        name : string; /* Node.getName() */
+//        displayName : string; /* Node.getDisplayName() */
+//        shortDescription : string; /* Node.getShortDescription() */
+//        leaf : boolean; /* Node.getChildren() == LEAF */
+//    }
+        
+        public static final class NodeInfoData {
+            private static int counter = 0;
+            private static final Map<Integer, Node> MAP = new HashMap<>();
+            
+            public final int id;
+            public final String name;
+            public final String displayName;
+            public final String shortDescription;
+            public final boolean leaf;
+            
+            private NodeInfoData(int id, Node n) {
+                this.id = id;
+                this.name = n.getName();
+                this.displayName = n.getDisplayName();
+                this.shortDescription = n.getShortDescription();
+                this.leaf = n.getChildren() == Children.LEAF;
+            }
+            
+            public static synchronized NodeInfoData find(Node n) {
+                Object lspId = n.getValue("lspId");
+                if (!(lspId instanceof Integer)) {
+                    lspId = ++counter;
+                    n.setValue("lspId", lspId);
+                    MAP.put((Integer) lspId, n);
+                }
+                return new NodeInfoData((int) lspId, n);
+            }
+            
+            public static synchronized NodeInfoData find(int id) {
+                Node n = MAP.get(id);
+                return n == null ? null : find(n);
+            }
+        }
+        
 	@JsonRequest(value = "nodes/info")
-	public CompletableFuture<String> nodesInfo(String params) {
-            return CompletableFuture.completedFuture("nodeInfo for " + params);
+	public CompletableFuture<NodeInfoData> nodesInfo(int nodeId) {
+            NodeInfoData data = NodeInfoData.find(nodeId);
+            assert data != null;
+            return CompletableFuture.completedFuture(data);
+        }
+        
+//    export const init = new RequestType<string, Data, void, void>('nodes/explorermanager');
+        
+	@JsonRequest(value = "nodes/explorermanager")
+	public CompletableFuture<NodeInfoData> explorerManager(String id) {
+            System.err.println("creating sample data: " + id);
+            NodeInfoData data = NodeInfoData.find(DemoNodeData.create());
+            assert data != null;
+            return CompletableFuture.completedFuture(data);
+        }
+        
+//    export const children = new RequestType<number, number[], void, void>('nodes/children');
+
+	@JsonRequest(value = "nodes/children")
+	public CompletableFuture<int[]> explorerManager(int id) {
+            Node n = NodeInfoData.MAP.get(id);
+            Node[] arr = n.getChildren().getNodes(true);
+            int[] res = new int[arr.length];
+            for (int i = 0; i < arr.length; i++) {
+                res[i] = NodeInfoData.find(arr[i]).id;
+            }
+            return  CompletableFuture.completedFuture(res);
         }
         
         @Override
