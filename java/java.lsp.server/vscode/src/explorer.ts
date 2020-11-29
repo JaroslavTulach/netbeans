@@ -28,23 +28,17 @@ class VisualizerProvider implements vscode.TreeDataProvider<Visualizer> {
 }
 
 class Visualizer extends vscode.TreeItem {
+  public ch : Visualizer[] | null;
   constructor(
-    public readonly label: string,
-    private version: number,
-    public ch: Visualizer[] | null,
-    public readonly collapsibleState: vscode.TreeItemCollapsibleState
+    private data : NodeInfoRequest.Data
   ) {
-    super(label, collapsibleState);
-    this.tooltip = `${this.label}-${this.version}`;
-    this.description = `Describe ${this.version}`;
+    super(data.displayName, data.leaf ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed);
+    this.id = data.name;
+    this.description = data.shortDescription;
+    this.ch = (data as any).ch; 
   }
 
   contextValue = "node";
-
-  iconPath = {
-    light: path.join(__filename, '..', '..', 'resources', 'light', 'dependency.svg'),
-    dark: path.join(__filename, '..', '..', 'resources', 'dark', 'dependency.svg')
-  };
 }
 
 export function register(c : LanguageClient) {
@@ -52,16 +46,30 @@ export function register(c : LanguageClient) {
     vscode.window.showInformationMessage(msg, "OK");
     return "processed " + msg;
   });
+  class NodeData implements NodeInfoRequest.Data {
+    displayName : string;
+    shortDescription : string;
+    leaf : boolean;
 
+    constructor(
+      public name : string,
+      dispName : any,
+      public ch : Visualizer[] | null
+    ) {
+      this.displayName = dispName.toString(); 
+      this.shortDescription = 'Description for ' + this.displayName;
+      this.leaf = ch === null;
+    }
+  }
 
-    let v = new Visualizer('root', 33, [
-      new Visualizer('chA', 1, null, vscode.TreeItemCollapsibleState.None),
-      new Visualizer('chB', 2, [
-        new Visualizer('deep1', 11, null, vscode.TreeItemCollapsibleState.None),
-        new Visualizer('deep2', 22, null, vscode.TreeItemCollapsibleState.None),
-      ], vscode.TreeItemCollapsibleState.Collapsed),
-      new Visualizer('chC', 3, null, vscode.TreeItemCollapsibleState.None),
-    ], vscode.TreeItemCollapsibleState.Expanded);
+    let v = new Visualizer(new NodeData('root', 33, [
+      new Visualizer(new NodeData('chA', 1, null)),
+      new Visualizer(new NodeData('chB', 2, [
+        new Visualizer(new NodeData('deep1', 11, null)),
+        new Visualizer(new NodeData('deep2', 22, null)),
+      ])),
+      new Visualizer(new NodeData('chC', 3, null)),
+    ]));
     let vtp = new VisualizerProvider(v);
     let view = vscode.window.createTreeView(
       'nodeDependencies', {
@@ -80,12 +88,16 @@ export function register(c : LanguageClient) {
 
     vscode.commands.registerCommand("nodeDependencies.deleteEntry", function (this: any, args: any) {
         let v = args as Visualizer;
+        v.description = 'Deleted! ';
+        this.refresh(v);
+      /*
         c.sendRequest(NodeInfoRequest.type, v.label).then((r) => {
           v.description = 'Deleted! ' + r;
           this.refresh(v);
         }, (err) => {
           vscode.window.showErrorMessage('Cannot delete node ' + err);
         });
+        */
     }, vtp);
 }
 
