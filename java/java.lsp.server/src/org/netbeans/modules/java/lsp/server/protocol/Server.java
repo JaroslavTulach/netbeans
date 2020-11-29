@@ -49,6 +49,7 @@ import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.eclipse.lsp4j.jsonrpc.MessageConsumer;
 import org.eclipse.lsp4j.jsonrpc.MessageIssueException;
 import org.eclipse.lsp4j.jsonrpc.messages.Message;
+import org.eclipse.lsp4j.jsonrpc.services.JsonRequest;
 import org.eclipse.lsp4j.launch.LSPLauncher;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.LanguageClientAware;
@@ -311,6 +312,11 @@ public final class Server {
         public void exit() {
         }
 
+	@JsonRequest(value = "nodes/info")
+	public CompletableFuture<String> nodesInfo(String params) {
+            return CompletableFuture.completedFuture("nodeInfo for " + params);
+        }
+        
         @Override
         public TextDocumentService getTextDocumentService() {
             return textDocumentService;

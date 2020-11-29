@@ -38,3 +38,7 @@ export namespace StatusMessageRequest {
 export namespace NodeQueryRequest {
     export const type = new RequestType<string, string, void, void>('nodes/delete');
 };
+
+export namespace NodeInfoRequest {
+    export const type = new RequestType<string, string, void, void>('nodes/info');
+};

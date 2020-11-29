@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { LanguageClient } from 'vscode-languageclient';
-import { NodeQueryRequest } from './protocol';
+import { NodeInfoRequest, NodeQueryRequest } from './protocol';
 
 class VisualizerProvider implements vscode.TreeDataProvider<Visualizer> {
   constructor(private root: Visualizer) {}
@@ -80,8 +80,12 @@ export function register(c : LanguageClient) {
 
     vscode.commands.registerCommand("nodeDependencies.deleteEntry", function (this: any, args: any) {
         let v = args as Visualizer;
-        v.description = 'Deleted!';
-        this.refresh(v);
+        c.sendRequest(NodeInfoRequest.type, v.label).then((r) => {
+          v.description = 'Deleted! ' + r;
+          this.refresh(v);
+        }, (err) => {
+          vscode.window.showErrorMessage('Cannot delete node ' + err);
+        });
     }, vtp);
 }
 
