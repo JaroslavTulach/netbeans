@@ -1074,6 +1074,11 @@ public class ServerTest extends NbTestCase {
             public void logMessage(MessageParams arg0) {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
+
+            @Override
+            public CompletableFuture<String> nodeQuery(String params) {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
         }, client.getInputStream(), client.getOutputStream());
         serverLauncher.startListening();
         LanguageServer server = serverLauncher.getRemoteProxy();

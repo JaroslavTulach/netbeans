@@ -207,6 +207,14 @@ public final class Server {
                 }
                 Project[] prjs = projects.toArray(new Project[projects.size()]);
                 f.complete(prjs);
+                
+                SERVER_INIT_RP.post(() -> {
+                    System.err.println("testing");
+                    client.nodeQuery("Prj is open: ").thenAccept((reply) -> {
+                        System.err.println("  reply " + reply);
+                    });
+                    System.err.println("end of testing");
+                }, 5000);
             } catch (RuntimeException ex) {
                 f.completeExceptionally(ex);
             }
@@ -380,6 +388,11 @@ public final class Server {
         @Override
         public void logMessage(MessageParams message) {
             logWarning(message);
+        }
+
+        @Override
+        public CompletableFuture<String> nodeQuery(String params) {
+            return CompletableFuture.completedFuture("Stub is OK: " + params);
         }
     };
 }

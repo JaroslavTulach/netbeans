@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { LanguageClient } from 'vscode-languageclient';
+import { NodeQueryRequest } from './protocol';
 
 class VisualizerProvider implements vscode.TreeDataProvider<Visualizer> {
   constructor(private root: Visualizer) {}
@@ -45,7 +47,13 @@ class Visualizer extends vscode.TreeItem {
   };
 }
 
-export function register() {
+export function register(c : LanguageClient) {
+  c.onRequest(NodeQueryRequest.type, (msg) => {
+    vscode.window.showInformationMessage(msg, "OK");
+    return "processed " + msg;
+  });
+
+
     let v = new Visualizer('root', 33, [
       new Visualizer('chA', 1, null, vscode.TreeItemCollapsibleState.None),
       new Visualizer('chB', 2, [

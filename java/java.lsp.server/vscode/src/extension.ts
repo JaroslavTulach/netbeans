@@ -28,7 +28,8 @@ import {
     StreamInfo,
     Message,
     MessageType,
-    LogMessageNotification
+    LogMessageNotification,
+    HandlerResult
 } from 'vscode-languageclient';
 
 import * as net from 'net';
@@ -37,7 +38,7 @@ import * as path from 'path';
 import { ChildProcess } from 'child_process';
 import * as vscode from 'vscode';
 import * as launcher from './nbcode';
-import { StatusMessageRequest, ShowStatusMessageParams  } from './protocol';
+import { StatusMessageRequest, ShowStatusMessageParams, NodeQueryRequest  } from './protocol';
 import * as explorer from './explorer';
 
 const API_VERSION : string = "1.0";
@@ -136,7 +137,6 @@ interface VSNetBeansAPI {
 }
 
 export function activate(context: ExtensionContext): VSNetBeansAPI {
-    explorer.register();
     let log = vscode.window.createOutputChannel("Apache NetBeans Language Server");
 
     let conf = workspace.getConfiguration();
@@ -417,6 +417,7 @@ function doActivateWithJDK(specifiedJDK: string | null, context: ExtensionContex
             commands.executeCommand('setContext', 'nbJavaLSReady', true);
             c.onNotification(StatusMessageRequest.type, showStatusBarMessage);
             c.onNotification(LogMessageNotification.type, (param) => handleLog(log, param.message));
+            explorer.register(c);
             handleLog(log, 'Language Client: Ready');
             setClient[0](c);
         }).catch(setClient[1]);

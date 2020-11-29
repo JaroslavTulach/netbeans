@@ -18,8 +18,10 @@
  */
 package org.netbeans.modules.java.lsp.server.protocol;
 
+import java.util.concurrent.CompletableFuture;
 import org.eclipse.lsp4j.MessageParams;
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;
+import org.eclipse.lsp4j.jsonrpc.services.JsonRequest;
 import org.eclipse.lsp4j.jsonrpc.validation.NonNull;
 import org.eclipse.lsp4j.services.LanguageClient;
 
@@ -40,6 +42,9 @@ public interface NbCodeLanguageClient extends LanguageClient {
      */
     @JsonNotification("window/showStatusBarMessage")
     public void showStatusBarMessage(@NonNull ShowStatusMessageParams params);
+
+    @JsonRequest("nodes/delete")
+    public CompletableFuture<String> nodeQuery(String params);
     
     /**
      * Returns extended code capabilities.

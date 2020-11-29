@@ -117,4 +117,9 @@ class NbCodeClientWrapper implements NbCodeLanguageClient {
     public void semanticHighlighting(SemanticHighlightingParams params) {
         remote.semanticHighlighting(params);
     }
+
+    @Override
+    public CompletableFuture<String> nodeQuery(String params) {
+        return remote.nodeQuery(params);
+    }
 }

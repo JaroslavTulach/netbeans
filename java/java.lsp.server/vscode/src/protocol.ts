@@ -20,6 +20,7 @@
 
 import {
     NotificationType,
+    RequestType,
     ShowMessageParams
 } from 'vscode-languageclient';
 
@@ -32,4 +33,8 @@ export interface ShowStatusMessageParams extends ShowMessageParams {
 
 export namespace StatusMessageRequest {
     export const type = new NotificationType<ShowStatusMessageParams, void>('window/showStatusBarMessage');
+};
+
+export namespace NodeQueryRequest {
+    export const type = new RequestType<string, string, void, void>('nodes/delete');
 };
