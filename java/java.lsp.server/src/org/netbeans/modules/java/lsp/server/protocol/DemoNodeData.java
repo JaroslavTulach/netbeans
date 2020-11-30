@@ -18,8 +18,10 @@
  */
 package org.netbeans.modules.java.lsp.server.protocol;
 
+import java.io.IOException;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
+import org.openide.nodes.Node;
 
 final class DemoNodeData extends AbstractNode {
 
@@ -28,6 +30,11 @@ final class DemoNodeData extends AbstractNode {
         setDisplayName(dn);
         setName("" + cnt);
         getChildren().add(ch);
+    }
+
+    @Override
+    public boolean canDestroy() {
+        return true;
     }
 
     public static DemoNodeData create() {

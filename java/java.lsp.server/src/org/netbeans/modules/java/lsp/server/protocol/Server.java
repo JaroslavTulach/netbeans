@@ -334,6 +334,7 @@ public final class Server {
             public final String displayName;
             public final String shortDescription;
             public final boolean leaf;
+            public final boolean canDestroy;
             
             private NodeInfoData(int id, Node n) {
                 this.id = id;
@@ -341,6 +342,7 @@ public final class Server {
                 this.displayName = n.getDisplayName();
                 this.shortDescription = n.getShortDescription();
                 this.leaf = n.getChildren() == Children.LEAF;
+                this.canDestroy = n.canDestroy();
             }
             
             public static synchronized NodeInfoData find(Node n) {
@@ -359,6 +361,23 @@ public final class Server {
             }
         }
         
+	@JsonRequest(value = "nodes/delete")
+	public CompletableFuture<Boolean> nodesDelete(int nodeId) {
+            CompletableFuture<Boolean> ret = new CompletableFuture<>();
+            Node n = NodeInfoData.MAP.get(nodeId);
+            if (n != null && n.canDestroy()) {
+                try {
+                    n.destroy();
+                    ret.complete(true);
+                } catch (IOException ex) {
+                    ret.completeExceptionally(ex);
+                }
+            } else {
+                ret.complete(false);
+            }
+            return ret;
+        }
+
 	@JsonRequest(value = "nodes/info")
 	public CompletableFuture<NodeInfoData> nodesInfo(int nodeId) {
             NodeInfoData data = NodeInfoData.find(nodeId);

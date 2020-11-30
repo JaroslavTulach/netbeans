@@ -1,6 +1,4 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as path from 'path';
 import { LanguageClient } from 'vscode-languageclient';
 import { NodeInfoRequest, NodeQueryRequest } from './protocol';
 
@@ -9,7 +7,7 @@ class VisualizerProvider implements vscode.TreeDataProvider<Visualizer> {
 
   constructor(
     private client: LanguageClient,
-    private id : string
+    id : string
   ) {
     this.root = new Promise((resolve) => {
       client.sendRequest(NodeInfoRequest.init, id).then((node) => {
@@ -36,7 +34,9 @@ class VisualizerProvider implements vscode.TreeDataProvider<Visualizer> {
         let res = Array<Visualizer>();
         for (let i = 0; i < arr.length; i++) {
           let d = await this.client.sendRequest(NodeInfoRequest.info, arr[i]);
-          res.push(new Visualizer(d));
+          let v = new Visualizer(d);
+          v.parent = element;
+          res.push(v);
         }
         return res;
       });
@@ -47,16 +47,14 @@ class VisualizerProvider implements vscode.TreeDataProvider<Visualizer> {
 }
 
 class Visualizer extends vscode.TreeItem {
-  public ch : Visualizer[] | null;
   constructor(
     public data : NodeInfoRequest.Data
   ) {
     super(data.displayName, data.leaf ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed);
     this.id = data.name;
     this.description = data.shortDescription;
-    this.ch = (data as any).ch; 
   }
-
+  parent: Visualizer | null = null;
   contextValue = "node";
 }
 
@@ -81,18 +79,14 @@ export function register(c : LanguageClient) {
     });
     view.title = "Showing Visualizers!";
 
-    vscode.commands.registerCommand("nodeDependencies.deleteEntry", function (this: any, args: any) {
+    vscode.commands.registerCommand("nodeDependencies.deleteEntry", async function (this: any, args: any) {
         let v = args as Visualizer;
-        v.description = 'Deleted! ';
-        this.refresh(v);
-      /*
-        c.sendRequest(NodeInfoRequest.type, v.label).then((r) => {
-          v.description = 'Deleted! ' + r;
-          this.refresh(v);
-        }, (err) => {
-          vscode.window.showErrorMessage('Cannot delete node ' + err);
-        });
-        */
+        let ok = await c.sendRequest(NodeInfoRequest.destroy, v.data.id);
+        if (ok) {
+          this.refresh(v.parent);
+        } else {
+          vscode.window.showErrorMessage('Cannot delete node ' + v.label);
+        }
     }, vtp);
 }
 
