@@ -226,7 +226,7 @@ public class JavaScriptEnginesTest {
         Sum sum = new Sum();
         Object raw = ((Invocable) engine).invokeMethod(fn, "call", null, sum);
 
-        ArrayLike res = ((Invocable) engine).getInterface(raw, ArrayLike.class);
+        ArrayLike res = as(raw, ArrayLike.class);
         if (res == null) {
             assumeNotNashorn();
             assumeNotGraalJsFromJDK();
@@ -240,6 +240,14 @@ public class JavaScriptEnginesTest {
         assertEquals("a", list.get(2));
         assertEquals(Math.PI, list.get(3));
         assertEquals(sum, list.get(4));
+    }
+
+    private <T> T as(Object raw, Class<T> clazz) {
+        try {
+            return ((Invocable) engine).getInterface(raw, clazz);
+        } catch (RuntimeException ex) {
+            return null;
+        }
     }
 
     private void assumeNotNashorn() {
