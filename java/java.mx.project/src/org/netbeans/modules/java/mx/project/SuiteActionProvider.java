@@ -22,6 +22,9 @@ import java.awt.Toolkit;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import org.netbeans.api.actions.Openable;
 import org.netbeans.api.debugger.*;
@@ -113,13 +116,19 @@ final class SuiteActionProvider implements ActionProvider {
                 // fallthrough
             }
             case ActionProvider.COMMAND_TEST_SINGLE:
-            case ActionProvider.COMMAND_RUN_SINGLE:
+            case ActionProvider.COMMAND_RUN_SINGLE: {
                 if (fo == null) {
                     Toolkit.getDefaultToolkit().beep();
                     return;
                 }
+                List<String[]> args = Arrays.asList(
+                        new String[]{"build" }, // NOI18N
+                        new String[]{"unittest", fo.getName() + testSuffix} // NOI18N
+                );
+                runMxSequence(Bundle.MSG_Unittest(fo.getName()), args);
                 runMx(Bundle.MSG_Unittest(fo.getName()), "unittest", fo.getName() + testSuffix); // NOI18N
                 break;
+            }
             case SingleMethod.COMMAND_DEBUG_SINGLE_METHOD: {
                 SingleMethod m = context.lookup(SingleMethod.class);
                 if (m != null && fo == null) {
@@ -129,7 +138,7 @@ final class SuiteActionProvider implements ActionProvider {
                 // fallthrough
             }
             case ActionProvider.COMMAND_DEBUG_TEST_SINGLE:
-            case ActionProvider.COMMAND_DEBUG_SINGLE:
+            case ActionProvider.COMMAND_DEBUG_SINGLE: {
                 if (fo == null) {
                     Toolkit.getDefaultToolkit().beep();
                     return;
@@ -143,14 +152,23 @@ final class SuiteActionProvider implements ActionProvider {
                     engines[0] = engs[0];
                 });
                 int port = ldic.getPortNumber();
-                runMx(Bundle.MSG_Unittest(fo.getName()), "--attach", "" + port, "unittest", fo.getName() + testSuffix); // NOI18N
+                List<String[]> args = Arrays.asList(
+                        new String[] { "build" }, // NOI18N
+                        new String[] { "--attach", "" + port, "unittest", fo.getName() + testSuffix } // NOI18N
+                );
+                runMxSequence(Bundle.MSG_Unittest(fo.getName()), args);
                 break;
+            }
             default:
                 throw new UnsupportedOperationException(action);
         }
     }
 
     private boolean runMx(String taskName, String... args) {
+        return runMxSequence(taskName, Collections.singletonList(args));
+    }
+
+    private boolean runMxSequence(String taskName, List<String[]> args) {
         final File suiteDir = FileUtil.toFile(prj.getProjectDirectory());
         if (!suiteDir.isDirectory()) {
             Toolkit.getDefaultToolkit().beep();
@@ -208,11 +226,37 @@ final class SuiteActionProvider implements ActionProvider {
                         return null;
                     };
                 });
-        ProcessBuilder processBuilder = ProcessBuilder.getLocal();
-        processBuilder.setWorkingDirectory(suiteDir.getPath());
-        processBuilder.setExecutable("mx"); // NOI18N
-        processBuilder.setArguments(Arrays.asList(args));
-        ExecutionService service = ExecutionService.newService(processBuilder, descriptor, taskName);
+        
+        class Builders implements Enumeration<ProcessBuilder>, Callable<Process> {
+            private final SequenceProcess sequence;
+            private int at;
+
+            public Builders() {
+                this.sequence = new SequenceProcess(this);
+            }
+            
+            @Override
+            public boolean hasMoreElements() {
+                return at < args.size();
+            }
+
+            @Override
+            public ProcessBuilder nextElement() {
+                String[] mxArgs = args.get(at++);
+                ProcessBuilder processBuilder = ProcessBuilder.getLocal();
+                processBuilder.setWorkingDirectory(suiteDir.getPath());
+                processBuilder.setExecutable("mx"); // NOI18N
+                processBuilder.setArguments(Arrays.asList(mxArgs));
+                return processBuilder;
+            }
+
+            @Override
+            public Process call() throws Exception {
+                return sequence;
+            }
+        }
+        
+        ExecutionService service = ExecutionService.newService(new Builders(), descriptor, taskName);
         Future<Integer> task = service.run();
         prj.registerTask(task);
         return false;
